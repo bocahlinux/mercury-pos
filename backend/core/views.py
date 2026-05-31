@@ -1,0 +1,27 @@
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import StoreSettings
+from .serializers import StoreSettingsSerializer
+from .permissions import OwnerOnly
+
+
+class StoreSettingsViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        settings, created = StoreSettings.objects.get_or_create()
+        serializer = StoreSettingsSerializer(settings)
+        return Response(serializer.data)
+
+    def update(self, request):
+        if request.user.role != 'owner':
+            return Response({'error': 'Only owner can update settings'}, status=403)
+        settings, created = StoreSettings.objects.get_or_create()
+        serializer = StoreSettingsSerializer(settings, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def partial_update(self, request):
+        return self.update(request)

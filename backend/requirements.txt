@@ -1,0 +1,32 @@
+# Mercury POS - Django Backend Requirements
+
+# Core
+Django>=4.2,<5.0
+djangorestframework>=3.14,<4.0
+django-cors-headers>=4.0
+python-decouple>=3.8
+
+# Auth
+djangorestframework-simplejwt>=5.3
+
+# Database
+psycopg2-binary>=2.9  # PostgreSQL (production)
+
+# API Filtering & Pagination
+django-filter>=23.0
+
+# Image Handling
+Pillow>=10.0
+
+# PDF Generation (Invoice/Struk)
+reportlab>=4.0
+weasyprint>=60.0
+
+# Excel Export (Laporan)
+openpyxl>=3.1
+
+# Barcode Generation
+python-barcode>=0.15
+
+# Utils
+django-extensions>=3.2

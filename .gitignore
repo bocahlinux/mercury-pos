@@ -1,0 +1,37 @@
+# Mercury POS — Open Source POS & Invoice System
+
+*.pyc
+__pycache__/
+*.sqlite3
+.env
+db.sqlite3
+venv/
+node_modules/
+build/
+dist/
+*.local
+
+# Media & uploads (keep structure, ignore contents)
+media/*
+!media/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Flutter
+.mobile/
+.dart_tool/
+.flutter-plugins
+.packages
+.pub-cache/
+.pub/
+
+# Build outputs
+backend/staticfiles/
