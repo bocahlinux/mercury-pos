@@ -2,10 +2,15 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.http import HttpResponse
 from .models import Transaction
-from .serializers import TransactionListSerializer, TransactionDetailSerializer, TransactionCreateSerializer
+from .serializers import (
+    TransactionListSerializer, TransactionDetailSerializer,
+    TransactionCreateSerializer, ReceiptSerializer,
+)
 from .utils import generate_invoice_number
 from .filters import TransactionFilter
+
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all().select_related('customer', 'cashier').prefetch_related('items')
@@ -19,11 +24,20 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return TransactionDetailSerializer
         if self.action == 'create':
             return TransactionCreateSerializer
+        if self.action == 'receipt':
+            return ReceiptSerializer
         return TransactionDetailSerializer
 
     def perform_create(self, serializer):
         invoice = generate_invoice_number()
         serializer.save(cashier=self.request.user, invoice_number=invoice)
+
+    @action(detail=True, methods=['get'])
+    def receipt(self, request, pk=None):
+        """Get receipt data for a transaction"""
+        txn = self.get_object()
+        serializer = ReceiptSerializer(txn)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def hold(self, request, pk=None):
@@ -45,3 +59,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
         txn.status = Transaction.Status.REFUNDED
         txn.save(update_fields=['status'])
         return Response({'status': 'refunded'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='download-pdf')
+    def download_pdf(self, request, pk=None):
+        """Download receipt as PDF"""
+        txn = self.get_object()
+        from .utils import receipt_pdf_response
+        return receipt_pdf_response(txn)
