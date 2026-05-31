@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../screens/auth/login_screen.dart';
-import 'dashboard/dashboard_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/dashboard/dashboard_screen.dart';
+import 'services/auth_service.dart';
 
 void main() {
   runApp(const MercuryPOSApp());

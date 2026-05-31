@@ -12,6 +12,7 @@ import InvoicesPage from '@/pages/invoices/InvoicesPage';
 import CustomersPage from '@/pages/customers/CustomersPage';
 import ReportsPage from '@/pages/reports/ReportsPage';
 import SettingsPage from '@/pages/settings/SettingsPage';
+import { ToastContainer } from '@/components/ui/Toast';
 
 const RequireAuth: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { token } = useAuthStore();
@@ -20,7 +21,9 @@ const RequireAuth: React.FC<{ children: React.ReactElement }> = ({ children }) =
 
 const App: React.FC = () => {
   return (
-    <Routes>
+    <>
+      <ToastContainer />
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route
@@ -42,6 +45,7 @@ const App: React.FC = () => {
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
     </Routes>
+    </>
   );
 };
 

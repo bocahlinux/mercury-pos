@@ -1,200 +1,191 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { BarChart, Bar, Legend } from 'recharts';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { formatCurrency } from '@/utils/currency';
-import { apiClient } from '@/api/client';
-import { Calendar } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import api from '@/api/client';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import { Calendar, BarChart2, TrendingUp } from 'lucide-react';
+import { format } from 'date-fns';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
-type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
-
-type SalesReportItem = {
-  date: string; // ISO string or formatted date
+interface SalesData {
+  date: string;
   total_sales: number;
-  transaction_count: number;
-};
+  total_transactions: number;
+}
 
-type ProductReportItem = {
+interface ProductData {
   product__name: string;
-  product__sku: string;
   total_sold: number;
   revenue: number;
-};
+}
 
-const periodOptions: Period[] = ['daily', 'weekly', 'monthly', 'yearly'];
+const periodOptions = ['daily', 'weekly', 'monthly', 'yearly'] as const;
 
-export const ReportsPage: React.FC = () => {
+type Period = typeof periodOptions[number];
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value);
+
+const ReportsPage: React.FC = () => {
   const [period, setPeriod] = useState<Period>('daily');
-  const [dateFrom, setDateFrom] = useState<string>('');
-  const [dateTo, setDateTo] = useState<string>('');
-  const [salesData, setSalesData] = useState<SalesReportItem[]>([]);
-  const [productData, setProductData] = useState<ProductReportItem[]>([]);
+  const [dateFrom, setDateFrom] = useState<Date | null>(null);
+  const [dateTo, setDateTo] = useState<Date | null>(null);
+  const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [productData, setProductData] = useState<ProductData[]>([]);
   const [summary, setSummary] = useState({ total_sales: 0, total_transactions: 0, average_transaction: 0 });
 
-  // Fetch sales report
+  const fetchSalesReport = async () => {
+    const params = new URLSearchParams({
+      period,
+      ...(dateFrom ? { date_from: format(dateFrom, 'yyyy-MM-dd') } : {}),
+      ...(dateTo ? { date_to: format(dateTo, 'yyyy-MM-dd') } : {}),
+    });
+    try {
+      const response = await api.get(`/api/reports/sales-report/?${params.toString()}`);
+      const data: SalesData[] = response.data;
+      setSalesData(data);
+      // compute summary
+      const totalSales = data.reduce((sum, row) => sum + row.total_sales, 0);
+      const totalTx = data.reduce((sum, row) => sum + row.total_transactions, 0);
+      const avgTx = totalTx ? totalSales / totalTx : 0;
+      setSummary({ total_sales: totalSales, total_transactions: totalTx, average_transaction: avgTx });
+    } catch (err) {
+      console.error('Failed to fetch sales report', err);
+    }
+  };
+
+  const fetchProductReport = async () => {
+    try {
+      const response = await api.get('/api/reports/product-report/');
+      setProductData(response.data);
+    } catch (err) {
+      console.error('Failed to fetch product report', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchSales = async () => {
-      try {
-        const params = new URLSearchParams({
-          period,
-          date_from: dateFrom,
-          date_to: dateTo,
-        });
-        const { data } = await apiClient.get(`/api/reports/sales-report/?${params.toString()}`);
-        setSalesData(data.results || data);
-        // calculate summary
-        const totalSales = data.results.reduce((sum: number, r: any) => sum + r.total_sales, 0);
-        const totalTx = data.results.reduce((sum: number, r: any) => sum + r.transaction_count, 0);
-        setSummary({
-          total_sales: totalSales,
-          total_transactions: totalTx,
-          average_transaction: totalTx ? totalSales / totalTx : 0,
-        });
-      } catch (e) {
-        console.error('Failed to fetch sales report', e);
-      }
-    };
-    fetchSales();
+    fetchSalesReport();
+    fetchProductReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, dateFrom, dateTo]);
 
-  // Fetch product report
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const { data } = await apiClient.get('/api/reports/product-report/');
-        setProductData(data.results || data);
-      } catch (e) {
-        console.error('Failed to fetch product report', e);
-      }
-    };
-    fetchProducts();
-  }, []);
-
   return (
-    <div className="p-6 space-y-6">
-      {/* Period selector */}
-      <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-        <TabsList>
-          {periodOptions.map((p) => (
-            <TabsTrigger key={p} value={p} className="capitalize">
-              {p}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
-      {/* Date range pickers */}
-      <div className="flex space-x-4 items-center">
-        <label className="flex items-center space-x-2">
-          <Calendar size={16} />
-          <span>From</span>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-        </label>
-        <label className="flex items-center space-x-2">
-          <Calendar size={16} />
-          <span>To</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-        </label>
+    <div className="p-6 space-y-8">
+      {/* Period Tabs */}
+      <div className="flex space-x-2">
+        {periodOptions.map((opt) => (
+          <button
+            key={opt}
+            className={`px-4 py-2 rounded-md transition-colors 
+              ${period === opt ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-800'}
+            `}
+            onClick={() => setPeriod(opt)}
+          >
+            {opt.charAt(0).toUpperCase() + opt.slice(1)}
+          </button>
+        ))}
       </div>
 
-      {/* Summary cards */}
+      {/* Date Range Pickers */}
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <Calendar className="w-5 h-5 text-gray-600" />
+          <DatePicker
+            selected={dateFrom}
+            onChange={(date) => setDateFrom(date)}
+            placeholderText="From"
+            className="border rounded px-2 py-1"
+            dateFormat="yyyy-MM-dd"
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Calendar className="w-5 h-5 text-gray-600" />
+          <DatePicker
+            selected={dateTo}
+            onChange={(date) => setDateTo(date)}
+            placeholderText="To"
+            className="border rounded px-2 py-1"
+            dateFormat="yyyy-MM-dd"
+          />
+        </div>
+      </div>
+
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Sales</CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-bold">{formatCurrency(summary.total_sales, 'IDR')}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Transactions</CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-bold">{summary.total_transactions}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Average Transaction</CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-bold">{formatCurrency(summary.average_transaction, 'IDR')}</CardContent>
-        </Card>
+        <div className="p-4 bg-white rounded shadow flex items-center space-x-3">
+          <TrendingUp className="w-6 h-6 text-green-600" />
+          <div>
+            <p className="text-sm text-gray-500">Total Sales</p>
+            <p className="text-xl font-semibold">{formatCurrency(summary.total_sales)}</p>
+          </div>
+        </div>
+        <div className="p-4 bg-white rounded shadow flex items-center space-x-3">
+          <BarChart2 className="w-6 h-6 text-blue-600" />
+          <div>
+            <p className="text-sm text-gray-500">Transactions</p>
+            <p className="text-xl font-semibold">{summary.total_transactions}</p>
+          </div>
+        </div>
+        <div className="p-4 bg-white rounded shadow flex items-center space-x-3">
+          <TrendingUp className="w-6 h-6 text-purple-600" />
+          <div>
+            <p className="text-sm text-gray-500">Avg Transaction</p>
+            <p className="text-xl font-semibold">{formatCurrency(summary.average_transaction)}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Sales line chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sales Over Time</CardTitle>
-        </CardHeader>
-        <CardContent className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={salesData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatCurrency(Number(value), 'IDR')} />
-              <Line type="monotone" dataKey="total_sales" stroke="#3b82f6" name="Sales" />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Sales Line Chart */}
+      <div className="bg-white rounded shadow p-4 h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={salesData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis tickFormatter={formatCurrency} />
+            <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
+            <Line type="monotone" dataKey="total_sales" stroke="#8884d8" name="Sales" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
 
-      {/* Transaction count bar chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Transactions Count</CardTitle>
-        </CardHeader>
-        <CardContent className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={salesData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="transaction_count" fill="#10b981" name="Transactions" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Product report table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Report</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead className="text-right">Total Sold</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {productData.map((p) => (
-                <TableRow key={p.product__sku}>
-                  <TableCell>{p.product__name}</TableCell>
-                  <TableCell>{p.product__sku}</TableCell>
-                  <TableCell className="text-right">{p.total_sold}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(p.revenue, 'IDR')}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Product Report Table */}
+      <div className="bg-white rounded shadow overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Product
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Sold
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Revenue
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {productData.map((prod, idx) => (
+              <tr key={idx}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{prod.product__name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">{prod.total_sold}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                  {formatCurrency(prod.revenue)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
+
+export default ReportsPage;

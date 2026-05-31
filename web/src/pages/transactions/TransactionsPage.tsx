@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { fetchTransactions } from '@/api/client'
-import { Transition } from '@headlessui/react'
+import { api } from '@/api/client'
+import { DateTime } from 'luxon'
+import { ArrowRight, Eye } from 'lucide-react'
+// Tailwind and optional component library
 
 interface Transaction {
   id: string
@@ -8,189 +10,237 @@ interface Transaction {
   customer_name: string
   total: number
   payment_method: string
-  status: string
+  status: 'completed' | 'hold' | 'cancelled' | 'refunded'
   created_at: string
   items: Item[]
 }
 interface Item {
   id: string
-  product_name: string
+  name: string
   quantity: number
-  unit_price: number
-  subtotal: number
+  price: number
 }
 
 const statusOptions = [
-  { value: "", label: "All" },
-  { value: "completed", label: "Completed" },
-  { value: "hold", label: "Hold" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "refunded", label: "Refunded" },
+  { value: '', label: 'All' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'hold', label: 'Hold' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'refunded', label: 'Refunded' },
 ]
 
-const statusColor = {
-  completed: 'bg-green-200 text-green-800',
-  hold: 'bg-yellow-200 text-yellow-800',
-  cancelled: 'bg-red-200 text-red-800',
-  refunded: 'bg-gray-200 text-gray-800',
-  default: 'bg-gray-200 text-gray-800',
+const statusColors: Record<Transaction['status'], string> = {
+  completed: 'bg-green-500 text-white',
+  hold: 'bg-yellow-500 text-black',
+  cancelled: 'bg-red-500 text-white',
+  refunded: 'bg-gray-400 text-black',
 }
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
+
+const formatDate = (iso: string) =>
+  DateTime.fromISO(iso)
+    .setLocale('id')
+    .toFormat('dd MMM yyyy HH:mm')
+
 const TransactionsPage: React.FC = () => {
-  const [status, setStatus] = useState<string>('')
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [statusFilter, setStatusFilter] = useState<string>('')
   const [dateFrom, setDateFrom] = useState<string>('')
   const [dateTo, setDateTo] = useState<string>('')
-  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
-  const [modalOpen, setModalOpen] = useState<boolean>(false)
+  const [selected, setSelected] = useState<Transaction | null>(null)
 
-  const loadTransactions = async () => {
+  const fetchTransactions = async () => {
     setLoading(true)
-    setError(null)
     try {
-      const params = new URLSearchParams()
-      if (status) params.append('status', status)
-      if (dateFrom) params.append('date_from', dateFrom)
-      if (dateTo) params.append('date_to', dateTo)
-      const data = await fetchTransactions(`/api/transactions/transactions/?${params.toString()}`)
-      setTransactions(data)
+      const params: Record<string, string | undefined> = {
+        status: statusFilter || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
+      }
+      const res = await api.get<Transaction[]>('/api/transactions/transactions/', {
+        params,
+      })
+      setTransactions(res.data)
     } catch (e) {
-      setError('Failed to load transactions')
+      console.error(e)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadTransactions()
-  }, [status, dateFrom, dateTo])
-
-  const formatter = new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  })
-  const dateFormatter = new Intl.DateTimeFormat('id-ID', {
-    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-  })
+    fetchTransactions()
+  }, [statusFilter, dateFrom, dateTo])
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">Transactions</h1>
+      <h1 className="text-2xl font-bold mb-4">Transactions</h1>
+      {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6">
-        <select
-          className="border rounded px-3 py-1"
-          value={status}
-          onChange={e => setStatus(e.target.value)}
-        >
-          {statusOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <input
-          type="date"
-          className="border rounded px-3 py-1"
-          value={dateFrom}
-          onChange={e => setDateFrom(e.target.value)}
-          placeholder="From"
-        />
-        <input
-          type="date"
-          className="border rounded px-3 py-1"
-          value={dateTo}
-          onChange={e => setDateTo(e.target.value)}
-          placeholder="To"
-        />
+        <div className="flex items-center">
+          <label className="mr-2">Status:</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border rounded px-2 py-1"
+          >
+            {statusOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center">
+          <label className="mr-2">From:</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+        </div>
+        <div className="flex items-center">
+          <label className="mr-2">To:</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+        </div>
       </div>
 
-      {loading ? (
-        <div>Loading...</div>
-      ) : error ? (
-        <div className="text-red-600">{error}</div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border">
+          <thead>
+            <tr>
+              <th className="p-3 border">Invoice</th>
+              <th className="p-3 border">Customer</th>
+              <th className="p-3 border">Total</th>
+              <th className="p-3 border">Payment</th>
+              <th className="p-3 border">Status</th>
+              <th className="p-3 border">Created</th>
+              <th className="p-3 border">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Invoice</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Customer</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Total</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Payment</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Status</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Created At</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Actions</th>
+                <td colSpan={7} className="text-center p-4">
+                  Loading…
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {transactions.map(tx => (
-                <tr key={tx.id}>
-                  <td className="px-4 py-2">{tx.invoice_number}</td>
-                  <td className="px-4 py-2">{tx.customer_name}</td>
-                  <td className="px-4 py-2">{formatter.format(tx.total)}</td>
-                  <td className="px-4 py-2">{tx.payment_method}</td>
-                  <td className="px-4 py-2">
-                    <span className={`px-2 py-0.5 rounded ${statusColor[tx.status] ?? statusColor.default} text-xs`}>{tx.status}</span>
+            ) : transactions.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center p-4">
+                  No transactions found.
+                </td>
+              </tr>
+            ) : (
+              transactions.map((t) => (
+                <tr key={t.id} className="hover:bg-gray-50">
+                  <td className="p-3 border">{t.invoice_number}</td>
+                  <td className="p-3 border">{t.customer_name}</td>
+                  <td className="p-3 border">{formatCurrency(t.total)}</td>
+                  <td className="p-3 border">{t.payment_method}</td>
+                  <td className="p-3 border">
+                    <span
+                      className={`px-2 py-1 rounded ${statusColors[t.status]}`}
+                    >
+                      {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                    </span>
                   </td>
-                  <td className="px-4 py-2">{dateFormatter.format(new Date(tx.created_at))}</td>
-                  <td className="px-4 py-2">
+                  <td className="p-3 border">{formatDate(t.created_at)}</td>
+                  <td className="p-3 border">
                     <button
-                      className="text-blue-600 hover:underline"
-                      onClick={() => { setSelectedTx(tx); setModalOpen(true) }}
-                    >View</button>
+                      onClick={() => setSelected(t)}
+                      className="text-indigo-600 hover:underline flex items-center gap-1"
+                    >
+                      <Eye size={16} /> View
+                    </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <Transition appear show={modalOpen} as={React.Fragment}>
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-11/12 md:w-3/5 p-6 relative">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              onClick={() => setModalOpen(false)}
-            >✕</button>
-            {selectedTx && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Transaction {selectedTx.invoice_number}</h2>
-                <p><strong>Customer:</strong> {selectedTx.customer_name}</p>
-                <p><strong>Payment Method:</strong> {selectedTx.payment_method}</p>
-                <p><strong>Status:</strong> {selectedTx.status}</p>
-                <p><strong>Total:</strong> {formatter.format(selectedTx.total)}</p>
-                <p className="mb-4"><strong>Created At:</strong> {dateFormatter.format(new Date(selectedTx.created_at))}</p>
-
-                <h3 className="text-lg font-medium mb-2">Items</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Product</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Quantity</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Unit Price</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {selectedTx.items.map(item => (
-                        <tr key={item.id}>
-                          <td className="px-4 py-2">{item.product_name}</td>
-                          <td className="px-4 py-2">{item.quantity}</td>
-                          <td className="px-4 py-2">{formatter.format(item.unit_price)}</td>
-                          <td className="px-4 py-2">{formatter.format(item.subtotal)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              ))
             )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Detail modal */}
+      {selected && (
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white rounded-lg shadow-lg w-11/12 md:w-3/4 lg:w-1/2 p-6 relative">
+            <h2 className="text-xl font-bold mb-4">Transaction {selected.invoice_number}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <strong>Customer:</strong> {selected.customer_name}
+              </div>
+              <div>
+                <strong>Total:</strong> {formatCurrency(selected.total)}
+              </div>
+              <div>
+                <strong>Payment Method:</strong> {selected.payment_method}
+              </div>
+              <div>
+                <strong>Created At:</strong> {formatDate(selected.created_at)}
+              </div>
+              <div>
+                <strong>Status:</strong>{' '}
+                <span
+                  className={`px-2 py-1 rounded ${statusColors[selected.status]}`}
+                >
+                  {selected.status.charAt(0).toUpperCase() + selected.status.slice(1)}
+                </span>
+              </div>
+            </div>
+
+            <h3 className="text-lg font-semibold mb-2">Items</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border">
+                <thead>
+                  <tr>
+                    <th className="p-2 border">Name</th>
+                    <th className="p-2 border">Qty</th>
+                    <th className="p-2 border">Price</th>
+                    <th className="p-2 border">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selected.items.map((i) => (
+                    <tr key={i.id}>
+                      <td className="p-2 border">{i.name}</td>
+                      <td className="p-2 border">{i.quantity}</td>
+                      <td className="p-2 border">{formatCurrency(i.price)}</td>
+                      <td className="p-2 border">{formatCurrency(i.price * i.quantity)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              onClick={() => setSelected(null)}
+              className="absolute top-4 right-4 text-gray-600"
+            >
+              ✕
+            </button>
           </div>
         </div>
-      </Transition>
+      )}
     </div>
   )
 }

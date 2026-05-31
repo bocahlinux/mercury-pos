@@ -1,216 +1,209 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/common/Button';
-import api from '@/api/client';
-
-const currencyFormatter = new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR',
-});
+import React, { useEffect, useState } from 'react'
+import { api } from '@/api/client'
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 interface Product {
-  id: number;
-  name: string;
-  price: number;
-  stock: number;
+  id: number
+  name: string
+  price: number
+  stock: number
+  category_id: number
 }
-
+interface Category {
+  id: number
+  name: string
+}
 interface CartItem {
-  product_id: number;
-  name: string;
-  quantity: number;
-  unit_price: number;
-  discount: number;
+  product: Product
+  quantity: number
+  discount: number
+  subtotal: number
 }
 
 export default function POSPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [search, setSearch] = useState('');
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'ewallet'>('cash');
-  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState<string>('')
+  const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'ewallet'>('cash')
+
+  const fetchProducts = async () => {
+    try {
+      const params: any = {}
+      if (search) params.search = search
+      if (category) params.category = category
+      const res = await api.get('/api/products/products/', { params })
+      setProducts(res.data)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get('/api/products/categories/')
+      setCategories(res.data)
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await api.get('/products/');
-        setProducts(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchProducts();
-  }, []);
+    fetchCategories()
+    fetchProducts()
+  }, [])
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    fetchProducts()
+  }, [search, category])
 
   const addToCart = (product: Product) => {
-    setCart((prev) => {
-      const exists = prev.find((i) => i.product_id === product.id);
-      if (exists) {
-        return prev.map((i) =>
-          i.product_id === product.id
-            ? {
-                ...i,
-                quantity: i.quantity + 1,
-              }
-            : i
-        );
+    setCart(prev => {
+      const existing = prev.find(item => item.product.id === product.id)
+      if (existing) {
+        const updated = prev.map(item => {
+          if (item.product.id === product.id) {
+            const qty = item.quantity + 1
+            const subtotal = (product.price - item.discount) * qty
+            return { ...item, quantity: qty, subtotal }
+          }
+          return item
+        })
+        return updated
       }
-      return [
-        ...prev,
-        {
-          product_id: product.id,
-          name: product.name,
-          quantity: 1,
-          unit_price: product.price,
-          discount: 0,
-        },
-      ];
-    });
-  };
+      return [{ product, quantity: 1, discount: 0, subtotal: product.price }]
+    })
+  }
 
-  const updateQuantity = (id: number, delta: number) => {
-    setCart((prev) =>
-      prev
-        .map((i) =>
-          i.product_id === id
-            ? { ...i, quantity: Math.max(1, i.quantity + delta) }
-            : i
-        )
-        .filter((i) => i.quantity > 0)
-    );
-  };
+  const updateQuantity = (productId: number, delta: number) => {
+    setCart(prev => {
+      return prev
+        .map(item => {
+          if (item.product.id === productId) {
+            const qty = Math.max(1, item.quantity + delta)
+            const subtotal = (item.product.price - item.discount) * qty
+            return { ...item, quantity: qty, subtotal }
+          }
+          return item
+        })
+        .filter(item => item.quantity > 0)
+    })
+  }
 
-  const removeItem = (id: number) => {
-    setCart((prev) => prev.filter((i) => i.product_id !== id));
-  };
+  const removeItem = (productId: number) => {
+    setCart(prev => prev.filter(item => item.product.id !== productId))
+  }
 
-  const subtotal = cart.reduce(
-    (acc, item) => acc + (item.unit_price - item.discount) * item.quantity,
-    0
-  );
-  const total = subtotal; // no tax or shipping defined
+  const subTotal = cart.reduce((sum, item) => sum + item.subtotal, 0)
+  const tax = 0 // placeholder for any tax logic
+  const total = subTotal + tax
 
-  const handleCheckout = async () => {
-    setLoading(true);
-    try {
-      const payload = {
-        items: cart.map((i) => ({
-          product_id: i.product_id,
-          quantity: i.quantity,
-          unit_price: i.unit_price,
-          discount: i.discount,
-          subtotal: (i.unit_price - i.discount) * i.quantity,
-        })),
-        payment_method: paymentMethod,
-        subtotal,
-        total,
-      };
-      await api.post('/api/transactions/transactions/', payload);
-      setCart([]);
-      alert('Transaksi berhasil');
-    } catch (err: any) {
-      console.error(err);
-      alert(err.response?.data?.detail ?? 'Checkout gagal');
-    } finally {
-      setLoading(false);
+  const formatIDR = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount)
+  }
+
+  const checkout = async () => {
+    const payload = {
+      items: cart.map(item => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        unit_price: item.product.price,
+        discount: item.discount,
+        subtotal: item.subtotal
+      })),
+      payment_method: paymentMethod,
+      subtotal: subTotal,
+      total
     }
-  };
+    try {
+      await api.post('/api/transactions/transactions/', payload)
+      setCart([])
+      toast.success('Berhasil checkout!')
+    } catch (e) {
+      console.error(e)
+      toast.error('Gagal checkout')
+    }
+  }
 
   return (
-    <div className="flex h-screen bg-gray-100 p-4">
-      {/* Left panel */}
-      <div className="w-3/5 pr-4 flex flex-col">
-        <input
-          type="text"
-          placeholder="Cari produk…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="input mb-4"
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 overflow-y-auto flex-grow">
-          {filteredProducts.map((p) => (
-          <div
-            key={p.id}
-            onClick={() => addToCart(p)}
-            className="cursor-pointer p-4 hover:shadow-lg rounded border"
+    <div className="flex h-screen">
+      <div className="w-3/5 p-4 overflow-auto">
+        <div className="mb-4 flex space-x-4">
+          <input
+            type="text"
+            placeholder="Cari produk..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="flex-1 border rounded p-2"
+          />
+          <select
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className="border rounded p-2"
           >
-            <h2 className="font-semibold text-lg mb-2">{p.name}</h2>
-            <p className="text-sm text-gray-600">
-              Harga: {currencyFormatter.format(p.price)}
-            </p>
-            <p className="text-sm text-gray-500">Stok: {p.stock}</p>
-          </div>
+            <option value="">Semua Kategori</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.id.toString()}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {products.map(p => (
+            <div key={p.id} className="border rounded p-4 cursor-pointer hover:bg-gray-50" onClick={() => addToCart(p)}>
+              <h3 className="font-semibold">{p.name}</h3>
+              <p>{formatIDR(p.price)}</p>
+              <p className="text-sm text-gray-500">Stok: {p.stock}</p>
+            </div>
           ))}
         </div>
       </div>
-      {/* Right panel */}
-      <div className="w-2/5 bg-white rounded shadow p-4 flex flex-col" style={{maxWidth:'400px'}}>
-        <h3 className="text-xl font-bold mb-4">Keranjang</h3>
-        {cart.length === 0 ? (
-          <p className="text-gray-500">Keranjang kosong</p>
-        ) : (
-          <div className="flex-1 overflow-y-auto mb-4">
-            {cart.map((item) => (
-              <div key={item.product_id} className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="font-medium">{item.name}</p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => updateQuantity(item.product_id, -1)}
-                    >
-                      -
-                    </button>
-                    <span>{item.quantity}</span>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => updateQuantity(item.product_id, 1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p>{currencyFormatter.format(item.unit_price - item.discount)}</p>
-                  <button onClick={() => removeItem(item.product_id)}>
-                    Hapus
-                  </button>
-                </div>
+      <div className="w-2/5 p-4 border-l flex flex-col">
+        <h2 className="text-xl font-bold mb-4">Keranjang</h2>
+        <div className="flex-1 overflow-auto">
+          {cart.length === 0 ? <p>Keranjang kosong</p> : null}
+          {cart.map(item => (
+            <div key={item.product.id} className="flex items-center justify-between mb-2 border-b pb-2">
+              <div>
+                <p className="font-medium">{item.product.name}</p>
+                <p className="text-sm text-gray-500">{formatIDR(item.product.price)}</p>
               </div>
-            ))}
-          </div>
-        )}
-        <div className="border-t pt-4 mb-4">
-          <p className="flex justify-between">
-            <span>Subtotal</span>
-            <span>{currencyFormatter.format(subtotal)}</span>
-          </p>
-          <p className="flex justify-between font-semibold mt-2">
-            <span>Total</span>
-            <span>{currencyFormatter.format(total)}</span>
-          </p>
+              <div className="flex items-center space-x-2">
+                <button onClick={() => updateQuantity(item.product.id, -1)}>-</button>
+                <span>{item.quantity}</span>
+                <button onClick={() => updateQuantity(item.product.id, 1)}>+</button>
+              </div>
+              <div className="flex items-center space-x-2">
+                <p>{formatIDR(item.subtotal)}</p>
+                <button onClick={() => removeItem(item.product.id)} className="text-red-500">×</button>
+              </div>
+            </div>
+          ))}
         </div>
-        <select
-          value={paymentMethod}
-          onChange={(e) => setPaymentMethod(e.target.value as any)}
-          className="w-full mb-4 p-2 border rounded"
-        >
-          <option value="cash">Cash</option>
-          <option value="transfer">Transfer</option>
-          <option value="ewallet">E-Wallet</option>
-        </select>
-        <Button
-          disabled={loading || cart.length === 0}
-          onClick={handleCheckout}
-          className="w-full"
-        >
-          {loading ? 'Memproses...' : 'Checkout'}
-        </Button>
+        <div className="mt-4">
+          <div className="flex justify-between">
+            <span>Subtotal:</span>
+            <span>{formatIDR(subTotal)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Total:</span>
+            <span>{formatIDR(total)}</span>
+          </div>
+          <div className="mt-4">
+            <label className="mr-2">Pembayaran:</label>
+            <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)}>
+              <option value="cash">Cash</option>
+              <option value="transfer">Transfer</option>
+              <option value="ewallet">Ewallet</option>
+            </select>
+          </div>
+          <button onClick={checkout} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded w-full">
+            Checkout
+          </button>
+        </div>
       </div>
+      <toast.Container />
     </div>
-  );
+  )
 }

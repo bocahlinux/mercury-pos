@@ -11,7 +11,7 @@ export const registerSchema = loginSchema.extend({
 
 export const authApi = {
   login: async ({ email, password }: { email: string; password: string }) => {
-    const res = await api.post('/auth/login', { email, password });
+    const res = await api.post('/auth/login/', { email, password });
     return res.data;
   },
   register: async ({ name, email, password }: { name: string; email: string; password: string }) => {
