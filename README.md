@@ -163,33 +163,55 @@ mercury-pos/
 | Phase | Nama | Status | Progress |
 |---|---|---|---|
 | **Phase 0** | Project Setup | ✅ Selesai | Monorepo, Django apps, React pages, Flutter screens, Git |
-| **Phase 1** | API Integration | 🔄 In Progress | Web connected, Flutter partial |
-| **Phase 2** | Cart & Checkout | 📋 Planned | Full cart logic, receipt printing |
-| **Phase 3** | Invoice & History | 📋 Planned | PDF generation, transaction history |
-| **Phase 4** | Dashboard & Reports | 📋 Planned | Charts, Excel export, real data |
+| **Phase 1** | API Integration | ✅ Selesai | Web + Flutter connected to API, auth, CRUD |
+| **Phase 2** | Cart & Checkout | ✅ Selesai | Full cart logic, receipt preview, mixed payment, zustand store |
+| **Phase 3** | Invoice & History | ✅ Selesai | PDF generation, mark paid/cancel, refund + stock restore, hold/resume |
+| **Phase 4** | Dashboard & Reports | 🔄 Partial | Basic dashboard + reports, charts, filters |
 | **Phase 5** | Multi-User & Audit | 📋 Planned | Role-based access, audit log |
 | **Phase 6** | Flutter Parity | 📋 Planned | Full feature parity + offline support |
 | **Phase 7** | Polish & Release | 📋 Planned | Testing, docs, open-source release |
 
-### Phase 1 Detail (In Progress)
+### Phase 1 Detail (✅ Selesai)
 
 | Task | Web | Flutter | Backend |
 |---|---|---|---|
 | Auth (login, register) | ✅ | ✅ | ✅ |
-| Dashboard (stats) | ✅ | ❌ Static | ✅ |
+| Dashboard (stats) | ✅ | ✅ | ✅ |
 | POS (cart, checkout) | ✅ | ✅ | ✅ |
-| Products (CRUD) | ✅ | ⚠️ Verify | ✅ |
-| Transactions (list) | ✅ | ❌ Missing | ✅ |
-| Invoices (list, PDF) | ✅ | ⚠️ Verify | ✅ |
-| Customers (CRUD) | ✅ | ❌ Missing | ✅ |
+| Products (CRUD) | ✅ | ✅ | ✅ |
+| Transactions (list) | ✅ | ✅ | ✅ |
+| Invoices (list, PDF) | ✅ | ✅ | ✅ |
+| Customers (CRUD) | ✅ | ✅ | ✅ |
 | Reports (dashboard) | ✅ | ❌ Missing | ✅ |
-| Settings | ✅ | ⚠️ Verify | ✅ |
-| Error handling | ❌ | ❌ | — |
-| Loading states | ⚠️ | ⚠️ | — |
-| CORS config | — | — | ⚠️ Verify |
-| Seed data | — | — | ❌ |
+| Settings | ✅ | ✅ | ✅ |
+| Error handling | ✅ | ⚠️ | — |
+| Loading states | ✅ | ⚠️ | — |
+| CORS config | — | — | ✅ |
+| Seed data | — | — | ✅ |
 
-> ✅ Done | ⚠️ Partial / Need Verify | ❌ Not Started
+### Phase 2 Detail (✅ Selesai)
+
+| Task | Web | Flutter | Backend |
+|---|---|---|---|
+| Cart state (zustand persist) | ✅ | ✅ | — |
+| Customer selection at checkout | ✅ | ✅ | — |
+| Receipt preview modal | ✅ | ✅ | — |
+| Mixed payment method | ✅ | ✅ | — |
+| Transaction create returns receipt | — | — | ✅ |
+| Flutter POS full checkout | ✅ | ✅ | — |
+
+### Phase 3 Detail (✅ Selesai)
+
+| Task | Web | Flutter | Backend |
+|---|---|---|---|
+| Invoice list with filters | ✅ | ✅ | ✅ |
+| Invoice detail + actions | ✅ | ✅ | ✅ |
+| PDF generation (receipt + invoice) | ✅ | ❌ | ✅ |
+| Transaction history with filters | ✅ | ✅ | ✅ |
+| Hold / Resume flow | ✅ | ✅ | ✅ |
+| Refund + stock restore | ✅ | ✅ | ✅ |
+| Mark paid / Cancel invoice | ✅ | ✅ | ✅ |
+| StockMovement logging | — | — | ✅ |
 
 ---
 
