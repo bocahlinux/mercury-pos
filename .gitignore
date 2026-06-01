@@ -25,6 +25,9 @@ media/*
 .DS_Store
 Thumbs.db
 
+# Test files
+backend/test_*.py
+
 # Flutter
 .mobile/
 .dart_tool/

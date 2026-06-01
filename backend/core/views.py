@@ -14,7 +14,7 @@ class StoreSettingsViewSet(viewsets.ViewSet):
         serializer = StoreSettingsSerializer(settings)
         return Response(serializer.data)
 
-    def update(self, request):
+    def update(self, request, *args, **kwargs):
         if request.user.role != 'owner':
             return Response({'error': 'Only owner can update settings'}, status=403)
         settings, created = StoreSettings.objects.get_or_create()
@@ -23,5 +23,5 @@ class StoreSettingsViewSet(viewsets.ViewSet):
         serializer.save()
         return Response(serializer.data)
 
-    def partial_update(self, request):
-        return self.update(request)
+    def partial_update(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)

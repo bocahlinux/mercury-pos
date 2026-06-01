@@ -48,13 +48,14 @@ class DashboardView(APIView):
         ).order_by('-total_sold')[:5]
 
         # Recent transactions
-        recent = Transaction.objects.select_related('cashier').order_by('-created_at')[:10]
+        recent = Transaction.objects.select_related('cashier', 'customer').order_by('-created_at')[:10]
         recent_data = [{
             'id': t.id,
             'invoice_number': t.invoice_number,
             'total': t.total,
             'status': t.status,
             'cashier': t.cashier.email,
+            'customer_name': t.customer.name if t.customer else '-',
             'created_at': t.created_at,
         } for t in recent]
 

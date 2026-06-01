@@ -27,12 +27,12 @@ interface DashboardData {
   today_transactions: number;
   week_sales: number;
   month_sales: number;
-  top_products: { name: string; revenue: number }[];
+  top_products: { product__name: string; revenue: number }[];
   recent_transactions: {
     id: string;
-    date: string;
-    amount: number;
-    customer: string;
+    created_at: string;
+    total: number;
+    customer_name?: string;
   }[];
 }
 
@@ -110,7 +110,7 @@ const DashboardPage: React.FC = () => {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.top_products} layout="vertical">
               <XAxis type="number" domain={[0, 'auto']} tickFormatter={(value) => formatter.format(value)} />
-              <YAxis dataKey="name" type="category" />
+              <YAxis dataKey="product__name" type="category" />
               <Tooltip formatter={(value) => formatter.format(Number(value))} />
               <Bar dataKey="revenue" fill="#3b82f6" />
             </BarChart>
@@ -137,9 +137,9 @@ const DashboardPage: React.FC = () => {
               {data.recent_transactions.slice(0, 10).map((tx, idx) => (
                 <tr key={tx.id} className="border-t">
                   <td className="px-4 py-2">{idx + 1}</td>
-                  <td className="px-4 py-2">{new Date(tx.date).toLocaleDateString('id-ID')}</td>
-                  <td className="px-4 py-2">{tx.customer}</td>
-                  <td className="px-4 py-2 text-right">{formatter.format(tx.amount)}</td>
+                  <td className="px-4 py-2">{new Date(tx.created_at).toLocaleDateString('id-ID')}</td>
+                  <td className="px-4 py-2">{tx.customer_name || '-'}</td>
+                  <td className="px-4 py-2 text-right">{formatter.format(tx.total)}</td>
                 </tr>
               ))}
             </tbody>
