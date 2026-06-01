@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import api from '@/api/client';
 import { DateTime } from 'luxon'
-import { ArrowRight, Eye } from 'lucide-react'
+import { Eye } from 'lucide-react'
 // Tailwind and optional component library
 
 interface Transaction {
@@ -56,6 +56,19 @@ const TransactionsPage: React.FC = () => {
   const [dateTo, setDateTo] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(false)
   const [selected, setSelected] = useState<Transaction | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+
+  const fetchDetail = async (id: string) => {
+    setDetailLoading(true)
+    try {
+      const res = await api.get(`/transactions/${id}/`)
+      setSelected(res.data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setDetailLoading(false)
+    }
+  }
 
   const fetchTransactions = async () => {
     setLoading(true)
@@ -65,10 +78,10 @@ const TransactionsPage: React.FC = () => {
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
       }
-      const res = await api.get<Transaction[]>('/transactions/', {
-        params,
-      })
-      setTransactions(res.data)
+      const res = await api.get('/transactions/', { params });
+      // Handle both paginated {results: [...]} and plain array
+      const data = res.data;
+      setTransactions(Array.isArray(data) ? data : (data.results ?? []));
     } catch (e) {
       console.error(e)
     } finally {
@@ -163,7 +176,7 @@ const TransactionsPage: React.FC = () => {
                   <td className="p-3 border">{formatDate(t.created_at)}</td>
                   <td className="p-3 border">
                     <button
-                      onClick={() => setSelected(t)}
+                      onClick={() => fetchDetail(t.id)}
                       className="text-indigo-600 hover:underline flex items-center gap-1"
                     >
                       <Eye size={16} /> View

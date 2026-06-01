@@ -52,10 +52,18 @@ class ApiClient {
     }
   }
 
-  // Auth
+  /// Extract list from response — handles both paginated {results: [...]} and plain [...]
+  List<dynamic> _extractList(dynamic data) {
+    if (data is List) return data;
+    if (data is Map && data['results'] is List) return data['results'] as List;
+    return [];
+  }
+
+  // ─── Auth ───────────────────────────────────────────
+
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await _dio.post('/auth/login/', data: {'email': email, 'password': password});
-    return response.data;
+    return response.data;  // {access, refresh, user}
   }
 
   Future<Map<String, dynamic>> register(Map<String, dynamic> data) async {
@@ -68,13 +76,14 @@ class ApiClient {
     return User.fromJson(response.data);
   }
 
-  // Products
+  // ─── Products ───────────────────────────────────────
+
   Future<List<Product>> getProducts({String? search, int? category}) async {
     final response = await _dio.get('/products/products/', queryParameters: {
       if (search != null) 'search': search,
       if (category != null) 'category': category,
     });
-    return (response.data['results'] as List).map((e) => Product.fromJson(e)).toList();
+    return _extractList(response.data).map((e) => Product.fromJson(e)).toList();
   }
 
   Future<Product> getProduct(int id) async {
@@ -96,48 +105,56 @@ class ApiClient {
     await _dio.delete('/products/products/$id/');
   }
 
-  // Categories
+  // ─── Categories ─────────────────────────────────────
+
   Future<List<Category>> getCategories() async {
     final response = await _dio.get('/products/categories/');
-    return (response.data['results'] as List).map((e) => Category.fromJson(e)).toList();
+    return _extractList(response.data).map((e) => Category.fromJson(e)).toList();
   }
 
-  // Transactions
+  /// Note: TransactionViewSet is registered under r"transactions" in transactions/urls.py,
+  /// included from "api/transactions/" in root urls. Full path = /api/transactions/transactions/
+
+  // ─── Transactions ───────────────────────────────────
+
   Future<List<Transaction>> getTransactions({String? status, String? dateFrom, String? dateTo}) async {
-    final response = await _dio.get('/transactions/', queryParameters: {
+    final response = await _dio.get('/transactions/transactions/', queryParameters: {
       if (status != null) 'status': status,
       if (dateFrom != null) 'date_from': dateFrom,
       if (dateTo != null) 'date_to': dateTo,
     });
-    return (response.data['results'] as List).map((e) => Transaction.fromJson(e)).toList();
+    return _extractList(response.data).map((e) => Transaction.fromJson(e)).toList();
   }
 
   Future<Transaction> getTransaction(int id) async {
-    final response = await _dio.get('/transactions/$id/');
+    final response = await _dio.get('/transactions/transactions/$id/');
     return Transaction.fromJson(response.data);
   }
 
   Future<Transaction> createTransaction(Map<String, dynamic> data) async {
-    final response = await _dio.post('/transactions/', data: data);
+    final response = await _dio.post('/transactions/transactions/', data: data);
     return Transaction.fromJson(response.data);
   }
 
   Future<Transaction> holdTransaction(int id) async {
-    final response = await _dio.post('/transactions/$id/hold/');
+    final response = await _dio.post('/transactions/transactions/$id/hold/');
     return Transaction.fromJson(response.data);
   }
 
   Future<Transaction> cancelTransaction(int id) async {
-    final response = await _dio.post('/transactions/$id/cancel/');
+    final response = await _dio.post('/transactions/transactions/$id/cancel/');
     return Transaction.fromJson(response.data);
   }
 
-  // Customers
+  // ─── Customers ──────────────────────────────────────
+  // CustomerViewSet registered under r"" in customers/urls.py,
+  // included from "api/customers/" in root. Full path = /api/customers/ (single prefix, OK)
+
   Future<List<Customer>> getCustomers({String? search}) async {
     final response = await _dio.get('/customers/', queryParameters: {
       if (search != null) 'search': search,
     });
-    return (response.data['results'] as List).map((e) => Customer.fromJson(e)).toList();
+    return _extractList(response.data).map((e) => Customer.fromJson(e)).toList();
   }
 
   Future<Customer> createCustomer(Map<String, dynamic> data) async {
@@ -150,13 +167,17 @@ class ApiClient {
     return Customer.fromJson(response.data);
   }
 
-  // Dashboard
+  // ─── Dashboard ──────────────────────────────────────
+
   Future<Map<String, dynamic>> getDashboard() async {
     final response = await _dio.get('/reports/dashboard/');
     return response.data;
   }
 
-  // Store Settings
+  // ─── Store Settings ─────────────────────────────────
+  // StoreSettingsViewSet registered under r"" in core/urls.py,
+  // included from "api/settings/" in root. Full path = /api/settings/ (single prefix, OK)
+
   Future<Map<String, dynamic>> getStoreSettings() async {
     final response = await _dio.get('/settings/');
     return response.data;

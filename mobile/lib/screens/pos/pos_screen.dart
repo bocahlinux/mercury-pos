@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../api/api_client.dart';
+import '../api/api_client.dart';
 import '../../models/product.dart';
 import '../../models/transaction.dart';
 
@@ -69,7 +69,7 @@ class _POSScreenState extends State<POSScreen> {
           try {
             await _api.createTransaction({
               'items': _cart.map((c) => {
-                'product_id': c.product.id,
+                'product': c.product.id,
                 'quantity': c.quantity,
                 'unit_price': c.product.sellPrice,
                 'discount': c.discount,

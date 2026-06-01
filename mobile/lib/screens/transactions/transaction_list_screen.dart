@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../api/api_client.dart';
+import '../api/api_client.dart';
 import '../../models/transaction.dart';
 
 class TransactionListScreen extends StatefulWidget {

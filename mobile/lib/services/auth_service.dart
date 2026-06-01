@@ -24,8 +24,16 @@ class AuthService extends ChangeNotifier {
     try {
       final data = await _api.login(email, password);
       await _storage.write(key: 'access_token', value: data['access']);
-      await _storage.write(key: 'refresh_token', value: data['refresh']);
-      _user = User.fromJson(data['user'] ?? {});
+      await _storage.write(key: 'refresh_token', data['refresh']);
+
+      // Backend CustomTokenObtainPairSerializer now returns {access, refresh, user}
+      if (data['user'] != null) {
+        _user = User.fromJson(data['user']);
+      } else {
+        // Fallback: fetch profile separately
+        _user = await _api.getProfile();
+      }
+
       _isLoading = false;
       notifyListeners();
       return true;

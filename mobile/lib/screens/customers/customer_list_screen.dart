@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../api/api_client.dart';
+import '../api/api_client.dart';
 import '../../models/customer.dart';
 
 class CustomerListScreen extends StatefulWidget {

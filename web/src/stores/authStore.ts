@@ -2,9 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 type User = {
-  id: string;
-  name: string;
+  id: number;
   email: string;
+  role: string;
+  phone?: string;
+  avatar?: string;
+  is_active: boolean;
+  date_joined: string;
 };
 
 type AuthState = {

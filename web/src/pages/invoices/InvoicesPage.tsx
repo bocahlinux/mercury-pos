@@ -37,10 +37,9 @@ const InvoicesPage: React.FC = () => {
       const params: Record<string, string> = {};
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
-      const res = await api.get<Invoice[]>("/invoices/", {
-        params,
-      });
-      setInvoices(res.data);
+      const res = await api.get("/invoices/", { params });
+      const data = res.data;
+      setInvoices(Array.isArray(data) ? data : (data.results ?? []));
     } catch (e) {
       console.error(e);
     } finally {

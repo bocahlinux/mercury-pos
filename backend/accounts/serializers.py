@@ -1,5 +1,17 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenSerializer
+from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from .models import User
+
+
+class CustomTokenObtainPairSerializer(BaseTokenSerializer):
+    """Override default JWT serializer to include user data in login response."""
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        user_serializer = UserSerializer(self.user)
+        data['user'] = user_serializer.data
+        return data
 
 
 class UserSerializer(serializers.ModelSerializer):

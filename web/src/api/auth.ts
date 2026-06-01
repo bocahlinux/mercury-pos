@@ -14,12 +14,12 @@ export const authApi = {
     const res = await api.post('/auth/login/', { email, password });
     return res.data;
   },
-  register: async ({ name, email, password }: { name: string; email: string; password: string }) => {
-    const res = await api.post('/auth/register', { name, email, password });
+  register: async ({ email, password, role }: { email: string; password: string; role?: string }) => {
+    const res = await api.post('/auth/register/', { email, password, password_confirm: password, role: role || 'kasir' });
     return res.data;
   },
   getProfile: async () => {
-    const res = await api.get('/auth/profile');
+    const res = await api.get('/auth/profile/');
     return res.data;
   },
 };

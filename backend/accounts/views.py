@@ -6,8 +6,17 @@ from .models import User
 from .serializers import (
     UserSerializer, UserRegisterSerializer,
     UserProfileSerializer, ChangePasswordSerializer,
+    CustomTokenObtainPairSerializer,
 )
 from .permissions import IsAdmin, IsOwner
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """JWT login that returns {access, refresh, user}."""
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+class UserRegisterView(generics.CreateAPIView):
 
 
 class UserRegisterView(generics.CreateAPIView):
