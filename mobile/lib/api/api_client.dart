@@ -70,7 +70,7 @@ class ApiClient {
 
   // Products
   Future<List<Product>> getProducts({String? search, int? category}) async {
-    final response = await _dio.get('/products/', queryParameters: {
+    final response = await _dio.get('/products/products/', queryParameters: {
       if (search != null) 'search': search,
       if (category != null) 'category': category,
     });
@@ -78,22 +78,22 @@ class ApiClient {
   }
 
   Future<Product> getProduct(int id) async {
-    final response = await _dio.get('/products/$id/');
+    final response = await _dio.get('/products/products/$id/');
     return Product.fromJson(response.data);
   }
 
   Future<Product> createProduct(Map<String, dynamic> data) async {
-    final response = await _dio.post('/products/', data: data);
+    final response = await _dio.post('/products/products/', data: data);
     return Product.fromJson(response.data);
   }
 
   Future<Product> updateProduct(int id, Map<String, dynamic> data) async {
-    final response = await _dio.patch('/products/$id/', data: data);
+    final response = await _dio.patch('/products/products/$id/', data: data);
     return Product.fromJson(response.data);
   }
 
   Future<void> deleteProduct(int id) async {
-    await _dio.delete('/products/$id/');
+    await _dio.delete('/products/products/$id/');
   }
 
   // Categories

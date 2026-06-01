@@ -57,7 +57,7 @@ const ProductsPage: React.FC = () => {
   const loadProducts = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/products/products/', {
+      const res = await api.get('/products/products/', {
         params: { search, category: categoryFilter },
       });
       setProducts(res.data || []);
@@ -70,7 +70,7 @@ const ProductsPage: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const res = await api.get('/api/products/categories/');
+      const res = await api.get('/products/categories/');
       setCategories(res.data || []);
     } catch (e) {
       console.error(e);
@@ -87,9 +87,9 @@ const ProductsPage: React.FC = () => {
   const handleSubmit = async (data: any) => {
     try {
       if (selectedProduct) {
-        await api.patch(`/api/products/products/${selectedProduct.id}/`, data);
+        await api.patch(`/products/products/${selectedProduct.id}/`, data);
       } else {
-        await api.post('/api/products/products/', data);
+        await api.post('/products/products/', data);
       }
       setIsModalOpen(false);
       setSelectedProduct(null);
@@ -119,7 +119,7 @@ const ProductsPage: React.FC = () => {
   const handleDelete = async () => {
     if (!selectedProduct) return;
     try {
-      await api.delete(`/api/products/products/${selectedProduct.id}/`);
+      await api.delete(`/products/products/${selectedProduct.id}/`);
       setIsDeleteDialogOpen(false);
       setSelectedProduct(null);
       loadProducts();

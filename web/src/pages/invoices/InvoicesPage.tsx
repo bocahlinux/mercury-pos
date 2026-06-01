@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { api } from "@/api/client";
+import api from "@/api/client";
 import { format } from "date-fns";
 import { FiDownload, FiInfo } from "react-icons/fi";
 
 const statusColors: Record<string, string> = {
-  pending: "-yellow-200",
-  paid: "-green-200",
-  overdue: "-red-200",
-  cancelled: "-gray-200",
+  pending: "bg-yellow-200",
+  paid: "bg-green-200",
+  overdue: "bg-red-200",
+  cancelled: "bg-gray-200",
 };
 
 interface Invoice {
@@ -37,7 +37,7 @@ const InvoicesPage: React.FC = () => {
       const params: Record<string, string> = {};
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
-      const res = await api.get<Invoice[]>("/api/invoices/invoices/", {
+      const res = await api.get<Invoice[]>("/invoices/", {
         params,
       });
       setInvoices(res.data);
@@ -55,9 +55,9 @@ const InvoicesPage: React.FC = () => {
   const generatePDF = async (id: number) => {
     try {
       const res = await api.post(
-        `/api/invoices/invoices/${id}/generate_pdf/`
+        `/invoices/${id}/generate_pdf/`
       );
-      const url = res.data.url;
+      const url = res.data.pdf_url;
       window.open(url, "_blank");
     } catch (e) {
       console.error(e);

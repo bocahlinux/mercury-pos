@@ -48,14 +48,22 @@ const ReportsPage: React.FC = () => {
       ...(dateTo ? { date_to: format(dateTo, 'yyyy-MM-dd') } : {}),
     });
     try {
-      const response = await api.get(`/api/reports/sales-report/?${params.toString()}`);
-      const data: SalesData[] = response.data;
+      const response = await api.get(`/reports/sales-report/?${params.toString()}`);
+      // Backend returns { period, summary, data }
+      const result = response.data;
+      const data: SalesData[] = (result.data || []).map((row: any) => ({
+        date: row.date || `${row.year}-${String(row.month).padStart(2, '0')}` || `${row.year}-W${row.week}` || `${row.year}`,
+        total_sales: row.total_sales || 0,
+        total_transactions: row.transaction_count || 0,
+      }));
       setSalesData(data);
-      // compute summary
-      const totalSales = data.reduce((sum, row) => sum + row.total_sales, 0);
-      const totalTx = data.reduce((sum, row) => sum + row.total_transactions, 0);
-      const avgTx = totalTx ? totalSales / totalTx : 0;
-      setSummary({ total_sales: totalSales, total_transactions: totalTx, average_transaction: avgTx });
+      if (result.summary) {
+        setSummary({
+          total_sales: result.summary.total_sales || 0,
+          total_transactions: result.summary.total_transactions || 0,
+          average_transaction: result.summary.average_transaction || 0,
+        });
+      }
     } catch (err) {
       console.error('Failed to fetch sales report', err);
     }
@@ -63,8 +71,9 @@ const ReportsPage: React.FC = () => {
 
   const fetchProductReport = async () => {
     try {
-      const response = await api.get('/api/reports/product-report/');
-      setProductData(response.data);
+      const response = await api.get('/reports/product-report/');
+      // Backend returns { data: [...] }
+      setProductData(response.data.data || []);
     } catch (err) {
       console.error('Failed to fetch product report', err);
     }

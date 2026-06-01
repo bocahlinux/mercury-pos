@@ -50,7 +50,7 @@ const DashboardPage: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await api.get('/api/reports/dashboard/');
+        const response = await api.get('/reports/dashboard/');
         setData(response.data as DashboardData);
         setError(null);
       } catch (err: any) {

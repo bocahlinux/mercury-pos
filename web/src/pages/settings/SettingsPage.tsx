@@ -1,11 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { toast } from 'react-toastify';
-import { getSettings, updateSettings } from '@/api/client';
-import { Settings } from '@/types/settings';
+import api from '@/api/client';
+import { toast } from '@/stores/toastStore';
+
+interface StoreSettings {
+  id?: number;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  tax_percent: number;
+  currency: string;
+  receipt_header: string;
+  receipt_footer: string;
+  logo?: string;
+}
 
 const SettingsPage: React.FC = () => {
-  const { register, handleSubmit, control, setValue, reset } = useForm<Settings>();
+  const { register, handleSubmit, control, setValue, reset } = useForm<StoreSettings>();
   const [loading, setLoading] = useState(true);
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [currentId, setCurrentId] = useState<number | null>(null);
@@ -13,21 +25,23 @@ const SettingsPage: React.FC = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const data = await getSettings();
+        const { data } = await api.get('/settings/');
         if (data) {
           setCurrentId(data.id);
           reset({
-            name: data.name,
-            address: data.address,
-            phone: data.phone,
-            email: data.email,
-            tax_percent: data.tax_percent,
-            currency: data.currency,
-            receipt_header: data.receipt_header,
-            receipt_footer: data.receipt_footer,
+            name: data.name || '',
+            address: data.address || '',
+            phone: data.phone || '',
+            email: data.email || '',
+            tax_percent: data.tax_percent || 11,
+            currency: data.currency || 'IDR',
+            receipt_header: data.receipt_header || '',
+            receipt_footer: data.receipt_footer || '',
           });
           if (data.logo) setLogoPreview(data.logo);
         }
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
@@ -35,12 +49,12 @@ const SettingsPage: React.FC = () => {
     fetch();
   }, [reset]);
 
-  const onSubmit = async (data: Settings) => {
+  const onSubmit = async (data: StoreSettings) => {
     if (currentId === null) return;
     try {
-      const payload: Partial<Settings> = { ...data };
+      const payload: Partial<StoreSettings> = { ...data };
       if (typeof payload.logo !== 'string') delete payload.logo;
-      await updateSettings(currentId, payload);
+      await api.patch(`/settings/${currentId}/`, payload);
       toast.success('Pengaturan berhasil disimpan');
     } catch (error) {
       console.error(error);

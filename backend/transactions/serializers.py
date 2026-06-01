@@ -27,9 +27,12 @@ class TransactionItemSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class TransactionListSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(source='customer.name', read_only=True, default='')
+    payment_method = serializers.CharField(read_only=True)
+
     class Meta:
         model = Transaction
-        fields = ['id', 'invoice_number', 'customer', 'cashier', 'total', 'status', 'created_at']
+        fields = ['id', 'invoice_number', 'customer', 'customer_name', 'cashier', 'total', 'payment_method', 'status', 'created_at']
         read_only_fields = fields
 
 class TransactionDetailSerializer(serializers.ModelSerializer):

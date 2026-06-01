@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { api } from '@/api/client'
+import api from '@/api/client';
 import { DateTime } from 'luxon'
 import { ArrowRight, Eye } from 'lucide-react'
 // Tailwind and optional component library
@@ -65,7 +65,7 @@ const TransactionsPage: React.FC = () => {
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
       }
-      const res = await api.get<Transaction[]>('/api/transactions/transactions/', {
+      const res = await api.get<Transaction[]>('/transactions/', {
         params,
       })
       setTransactions(res.data)
