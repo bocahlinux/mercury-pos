@@ -5,8 +5,8 @@
 | Phase | Nama | Status | File |
 |-------|------|--------|------|
 | Phase 0 | Project Setup | ✅ Done | [PHASE-00-SETUP.md](./PHASE-00-SETUP.md) |
-| Phase 1 | API Integration | 🔄 In Progress | [PHASE-01-API-INTEGRATION.md](./PHASE-01-API-INTEGRATION.md) |
-| Phase 2 | Cart & Checkout | 📋 Planned | [PHASE-02-CART-CHECKOUT.md](./PHASE-02-CART-CHECKOUT.md) |
+| Phase 1 | API Integration | ✅ Done | [PHASE-01-API-INTEGRATION.md](./PHASE-01-API-INTEGRATION.md) |
+| Phase 2 | Cart & Checkout | ✅ Done | [PHASE-02-CART-CHECKOUT.md](./PHASE-02-CART-CHECKOUT.md) |
 | Phase 3 | Invoice & History | 📋 Planned | [PHASE-03-INVOICE-HISTORY.md](./PHASE-03-INVOICE-HISTORY.md) |
 | Phase 4 | Dashboard & Reports | 🔄 Partial | [PHASE-04-DASHBOARD-REPORTS.md](./PHASE-04-DASHBOARD-REPORTS.md) |
 | Phase 5 | Multi-User & Audit | 📋 Planned | [PHASE-05-MULTI-USER-AUDIT.md](./PHASE-05-MULTI-USER-AUDIT.md) |
@@ -23,8 +23,8 @@
 ## Progress Summary
 ```
 Phase 0  ████████████████████ 100% ✅
-Phase 1  ████████████░░░░░░░░  60% 🔄  (Web ✅, Flutter partial)
-Phase 2  ░░░░░░░░░░░░░░░░░░░░   0% 📋
+Phase 1  ████████████████████ 100% ✅
+Phase 2  ████████████████████ 100% ✅
 Phase 3  ░░░░░░░░░░░░░░░░░░░░   0% 📋
 Phase 4  ████████░░░░░░░░░░░░  40% 🔄  (Basic dashboard done)
 Phase 5  ░░░░░░░░░░░░░░░░░░░░   0% 📋
