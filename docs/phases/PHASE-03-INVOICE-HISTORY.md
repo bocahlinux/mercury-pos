@@ -1,7 +1,7 @@
 # Phase 3 — Invoice & History
 
-> **Status**: 📋 Planned
-> **Target**: Setelah Phase 2 selesai
+> **Status**: ✅ Done
+> **Completed**: June 1, 2026
 
 ## Tujuan
 Implementasi invoice management lengkap, PDF generation, dan history transaksi.
@@ -61,12 +61,12 @@ Implementasi invoice management lengkap, PDF generation, dan history transaksi.
 ## Deliverables
 | Item | Status |
 |------|--------|
-| Invoice list with filters (web) | 📋 |
-| Invoice detail page (web) | 📋 |
-| PDF generation + download | 📋 |
-| Transaction history with filters (web) | 📋 |
-| Transaction detail page (web) | ✅ (partial) |
-| Hold/Resume flow | 📋 |
-| Refund flow | 📋 |
-| Invoice list (Flutter) | 📋 |
-| Transaction history (Flutter) | 📋 |
+| Invoice list with filters (web) | ✅ |
+| Invoice detail page (web) | ✅ |
+| PDF generation + download | ✅ |
+| Transaction history with filters (web) | ✅ |
+| Transaction detail page (web) | ✅ |
+| Hold/Resume flow | ✅ |
+| Refund flow | ✅ |
+| Invoice list (Flutter) | ✅ |
+| Transaction history (Flutter) | ✅ |
