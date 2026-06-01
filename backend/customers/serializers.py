@@ -17,11 +17,11 @@ class CustomerSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'loyalty_points', 'created_at', 'updated_at']
 
     def get_transaction_count(self, obj):
-        return obj.transaction_set.filter(status='completed').count()
+        return obj.transactions.filter(status='completed').count()
 
     def get_total_spent(self, obj):
         from django.db.models import Sum
-        total = obj.transaction_set.filter(status='completed').aggregate(
+        total = obj.transactions.filter(status='completed').aggregate(
             total=Sum('total')
         )['total']
         return total or 0

@@ -58,7 +58,6 @@ class Command(BaseCommand):
             user, created = User.objects.get_or_create(
                 email=email,
                 defaults={
-                    'name': f'{roles[i % 3].capitalize()} Mercury',
                     'role': roles[i % 3],
                     'is_active': True,
                 }

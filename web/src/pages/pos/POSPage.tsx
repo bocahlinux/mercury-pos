@@ -156,9 +156,9 @@ export default function POSPage() {
 
     setCheckingOut(true);
     try {
-      await api.post('/transactions/', {
+      await api.post('/transactions/transactions/', {
         items: cart.map(i => ({
-          product_id: i.product.id,
+          product: i.product.id,
           quantity: i.quantity,
           unit_price: i.product.sell_price,
           discount: i.discount,
@@ -168,7 +168,7 @@ export default function POSPage() {
         payment_amount: paymentMethod === 'cash' ? cashNum : total,
         change_amount: change,
         subtotal,
-        discount_type: discountType,
+        discount_type: discountType || 'percent',
         discount_value: orderDiscount,
         tax_percent: taxPercent,
         tax_amount: tax,

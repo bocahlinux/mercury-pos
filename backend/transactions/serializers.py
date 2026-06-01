@@ -62,7 +62,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 item_subtotal = qty * unit_price - discount
                 TransactionItem.objects.create(
                     transaction=transaction_obj,
-                    product_id=item_data['product_id'],
+                    product_id=item_data.get('product_id') or (item_data.get('product').id if item_data.get('product') else None),
                     variant_id=item_data.get('variant_id'),
                     quantity=qty,
                     unit_price=unit_price,
@@ -127,7 +127,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
             return ''
 
     def get_cashier_name(self, obj):
-        return obj.cashier.get_full_name() or obj.cashier.email
+        return obj.cashier.email
 
     def get_customer_name(self, obj):
         return obj.customer.name if obj.customer else '-'

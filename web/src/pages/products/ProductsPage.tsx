@@ -4,7 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, Transition } from '@headlessui/react';
-import { XMarkIcon, PencilAltIcon, TrashIcon, PlusIcon } from '@heroicons/react/solid';
+import { XMarkIcon, PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/solid';
 
 const unitOptions = [
   { value: 'pcs', label: 'pcs' },
@@ -60,7 +60,7 @@ const ProductsPage: React.FC = () => {
       const res = await api.get('/products/products/', {
         params: { search, category: categoryFilter },
       });
-      setProducts(res.data || []);
+      setProducts(res.data?.results || res.data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -71,7 +71,7 @@ const ProductsPage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const res = await api.get('/products/categories/');
-      setCategories(res.data || []);
+      setCategories(res.data?.results || res.data || []);
     } catch (e) {
       console.error(e);
     }
@@ -208,7 +208,7 @@ const ProductsPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button onClick={() => openEdit(p)} className="text-indigo-600 hover:text-indigo-900">
-                      <PencilAltIcon className="h-5 w-5" />
+                      <PencilIcon className="h-5 w-5" />
                     </button>
                     <button onClick={() => confirmDelete(p)} className="text-red-600 hover:text-red-900">
                       <TrashIcon className="h-5 w-5" />
@@ -234,7 +234,7 @@ const ProductsPage: React.FC = () => {
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+              <div className="fixed inset-0 bg-black opacity-30" />
             </Transition.Child>
 
             <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
@@ -456,7 +456,7 @@ const ProductsPage: React.FC = () => {
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+              <div className="fixed inset-0 bg-black opacity-30" />
             </Transition.Child>
 
             <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
@@ -473,9 +473,9 @@ const ProductsPage: React.FC = () => {
                 <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                   Delete Product
                 </Dialog.Title>
-                <Dialog.Content>
-                  <p className="mt-4">Are you sure you want to delete this product?</p>
-                </Dialog.Content>
+                <Dialog.Description className="mt-4">
+                  <p>Are you sure you want to delete this product?</p>
+                </Dialog.Description>
                 <div className="mt-6 flex justify-end space-x-2">
                   <button
                     type="button"

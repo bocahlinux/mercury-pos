@@ -15,7 +15,7 @@ import SettingsPage from '@/pages/settings/SettingsPage';
 import { ToastContainer } from '@/components/ui/Toast';
 
 const RequireAuth: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { token } = useAuthStore();
+  const token = useAuthStore((s) => s.accessToken);
   return token ? children : <Navigate to="/login" replace />;
 };
 

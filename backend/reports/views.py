@@ -54,7 +54,7 @@ class DashboardView(APIView):
             'invoice_number': t.invoice_number,
             'total': t.total,
             'status': t.status,
-            'cashier': t.cashier.get_full_name() or t.cashier.email,
+            'cashier': t.cashier.email,
             'created_at': t.created_at,
         } for t in recent]
 
