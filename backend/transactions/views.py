@@ -52,24 +52,82 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def hold(self, request, pk=None):
+        """Hold a transaction (pause)"""
         txn = self.get_object()
+        if txn.status not in (Transaction.Status.COMPLETED, Transaction.Status.HOLD):
+            return Response({'detail': f'Cannot hold transaction with status "{txn.status}"'}, status=status.HTTP_400_BAD_REQUEST)
         txn.status = Transaction.Status.HOLD
         txn.save(update_fields=['status'])
         return Response({'status': 'held'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
+    def resume(self, request, pk=None):
+        """Resume a held transaction back to completed"""
         txn = self.get_object()
+        if txn.status != Transaction.Status.HOLD:
+            return Response({'detail': f'Cannot resume transaction with status "{txn.status}"'}, status=status.HTTP_400_BAD_REQUEST)
+        txn.status = Transaction.Status.COMPLETED
+        txn.save(update_fields=['status'])
+        return Response({'status': 'resumed'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Cancel transaction and restore stock"""
+        txn = self.get_object()
+        if txn.status == Transaction.Status.CANCELLED:
+            return Response({'detail': 'Transaction already cancelled'}, status=status.HTTP_400_BAD_REQUEST)
+        if txn.status == Transaction.Status.REFUNDED:
+            return Response({'detail': 'Cannot cancel a refunded transaction'}, status=status.HTTP_400_BAD_REQUEST)
+        # Restore stock for each item before cancelling
+        for item in txn.items.all():
+            product = item.product
+            product.stock += item.quantity
+            product.save(update_fields=['stock'])
+            # Log stock movement
+            from products.models import StockMovement
+            StockMovement.objects.create(
+                product=product,
+                variant=item.variant,
+                type='in',
+                quantity=item.quantity,
+                reference=f'Cancel {txn.invoice_number}',
+                notes=f'Transaction cancelled',
+                created_by=txn.cashier,
+            )
         txn.status = Transaction.Status.CANCELLED
         txn.save(update_fields=['status'])
         return Response({'status': 'cancelled'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def refund(self, request, pk=None):
+        """Refund transaction: restore stock + optional reason"""
         txn = self.get_object()
+        if txn.status == Transaction.Status.REFUNDED:
+            return Response({'detail': 'Transaction already refunded'}, status=status.HTTP_400_BAD_REQUEST)
+        if txn.status == Transaction.Status.CANCELLED:
+            return Response({'detail': 'Cannot refund a cancelled transaction'}, status=status.HTTP_400_BAD_REQUEST)
+        # Optional refund reason
+        reason = request.data.get('reason', 'Refund')
+        # Restore stock for each item
+        for item in txn.items.all():
+            product = item.product
+            product.stock += item.quantity
+            product.save(update_fields=['stock'])
+            # Log stock movement
+            from products.models import StockMovement
+            StockMovement.objects.create(
+                product=product,
+                variant=item.variant,
+                type='in',
+                quantity=item.quantity,
+                reference=f'Refund {txn.invoice_number}',
+                notes=reason,
+                created_by=txn.cashier,
+            )
         txn.status = Transaction.Status.REFUNDED
-        txn.save(update_fields=['status'])
-        return Response({'status': 'refunded'}, status=status.HTTP_200_OK)
+        txn.notes = f"{txn.notes or ''}\n[REFUND: {reason}]".strip()
+        txn.save(update_fields=['status', 'notes'])
+        return Response({'status': 'refunded', 'reason': reason}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'], url_path='download-pdf')
     def download_pdf(self, request, pk=None):

@@ -87,7 +87,7 @@ def generate_receipt_pdf(transaction):
     # Transaction info
     date_str = transaction.created_at.strftime('%d/%m/%Y %H:%M')
     elements.append(Paragraph(f'Tanggal: {date_str}', normal_style))
-    elements.append(Paragraph(f'Kasir: {transaction.cashier.get_full_name() or transaction.cashier.email}', normal_style))
+    elements.append(Paragraph(f'Kasir: {transaction.cashier.email}', normal_style))
     if transaction.customer:
         elements.append(Paragraph(f'Pelanggan: {transaction.customer.name}', normal_style))
     elements.append(Spacer(1, 2 * mm))

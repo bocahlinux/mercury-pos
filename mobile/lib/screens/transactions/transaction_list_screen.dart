@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../api/api_client.dart';
+import '../../api/api_client.dart';
 import '../../models/transaction.dart';
 
 class TransactionListScreen extends StatefulWidget {
@@ -15,11 +15,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   List<Transaction> _transactions = [];
   bool _loading = true;
   String _statusFilter = 'all';
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -52,8 +59,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           onAction: (action) async {
             try {
               if (action == 'hold') await _api.holdTransaction(t.id);
+              if (action == 'resume') await _api.resumeTransaction(t.id);
               if (action == 'cancel') await _api.cancelTransaction(t.id);
-              if (action == 'refund') await _api.cancelTransaction(t.id); // TODO: refund endpoint
+              if (action == 'refund') {
+                // Prompt for reason
+                if (ctx.mounted) Navigator.pop(ctx);
+                _promptRefund(t);
+                return;
+              }
               if (ctx.mounted) Navigator.pop(ctx);
               _load();
             } catch (e) {
@@ -63,6 +76,43 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             }
           },
         ),
+      ),
+    );
+  }
+
+  void _promptRefund(Transaction t) {
+    final reasonCtrl = TextEditingController(text: 'Refund');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Refund Transaction'),
+        content: TextField(
+          controller: reasonCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Reason',
+            hintText: 'Refund',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _api.refundTransaction(t.id, reason: reasonCtrl.text);
+                _load();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaction refunded')));
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal refund: $e')));
+                }
+              }
+            },
+            child: const Text('Refund'),
+          ),
+        ],
       ),
     );
   }
@@ -105,25 +155,38 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       appBar: AppBar(title: const Text('Riwayat Transaksi')),
       body: Column(
         children: [
-          // Status filter
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          // Search + Filter
+          Padding(
+            padding: const EdgeInsets.all(8),
             child: Row(
               children: [
-                const SizedBox(width: 4),
-                for (final s in ['all', 'completed', 'hold', 'cancelled'])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(s == 'all' ? 'Semua' : _statusLabel(s)),
-                      selected: _statusFilter == s,
-                      onSelected: (selected) {
-                        setState(() => _statusFilter = s);
-                        _load();
-                      },
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Cari invoice...',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                      isDense: true,
                     ),
+                    onSubmitted: (_) => _load(),
                   ),
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _statusFilter,
+                  items: const [
+                    DropdownMenuItem(value: 'all', child: Text('Semua')),
+                    DropdownMenuItem(value: 'completed', child: Text('Selesai')),
+                    DropdownMenuItem(value: 'hold', child: Text('Ditahan')),
+                    DropdownMenuItem(value: 'cancelled', child: Text('Dibatalkan')),
+                    DropdownMenuItem(value: 'refunded', child: Text('Refund')),
+                  ],
+                  onChanged: (v) {
+                    setState(() => _statusFilter = v ?? 'all');
+                    _load();
+                  },
+                ),
               ],
             ),
           ),
@@ -244,7 +307,7 @@ class _TransactionDetail extends StatelessWidget {
             ]),
           if (transaction.taxAmount > 0)
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text('Pajak:'), Text(currency.format(transaction.taxAmount)),
+              Text('Pajak (${transaction.taxAmount > 0 ? "11" : "0"}%):'), Text(currency.format(transaction.taxAmount)),
             ]),
           const Divider(),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -254,6 +317,24 @@ class _TransactionDetail extends StatelessWidget {
           const SizedBox(height: 24),
           // Actions
           if (transaction.status == 'completed') ...[
+            Row(children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => onAction('hold'),
+                  icon: const Icon(Icons.pause),
+                  label: const Text('Hold'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => onAction('cancel'),
+                  icon: const Icon(Icons.close),
+                  label: const Text('Cancel'),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 8),
             Row(children: [
               Expanded(
                 child: OutlinedButton.icon(
@@ -267,8 +348,8 @@ class _TransactionDetail extends StatelessWidget {
             Row(children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => onAction('complete'),
-                  icon: const Icon(Icons.check),
+                  onPressed: () => onAction('resume'),
+                  icon: const Icon(Icons.play_arrow),
                   label: const Text('Lanjutkan'),
                 ),
               ),

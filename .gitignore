@@ -38,3 +38,4 @@ backend/test_*.py
 
 # Build outputs
 backend/staticfiles/
+backend/media/

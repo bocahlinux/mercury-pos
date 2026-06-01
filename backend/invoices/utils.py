@@ -33,10 +33,13 @@ def generate_pdf_invoice(invoice: Invoice):
     elements.append(Spacer(1, 12))
 
     # Invoice and customer info
+    issued_str = invoice.issued_date.strftime("%Y-%m-%d") if hasattr(invoice.issued_date, 'strftime') else str(invoice.issued_date)
+    due_str = invoice.due_date.strftime("%Y-%m-%d") if invoice.due_date and hasattr(invoice.due_date, 'strftime') else (str(invoice.due_date) if invoice.due_date else "N/A")
+    customer_name = invoice.transaction.customer.name if invoice.transaction.customer else "-"
     invoice_info = [
-        ["Invoice Date:", invoice.issued_date.strftime("%Y-%m-%d")],
-        ["Due Date:", invoice.due_date.strftime("%Y-%m-%d") if invoice.due_date else "N/A"],
-        ["Customer:", str(invoice.transaction.customer) if hasattr(invoice.transaction, 'customer') else ""],
+        ["Invoice Date:", issued_str],
+        ["Due Date:", due_str],
+        ["Customer:", customer_name],
     ]
     t = Table(invoice_info, colWidths=[120, 350])
     t.setStyle(TableStyle([

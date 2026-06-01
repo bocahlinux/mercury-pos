@@ -4,6 +4,7 @@ import 'models/user.dart';
 import 'models/product.dart';
 import 'models/transaction.dart';
 import 'models/customer.dart';
+import 'models/invoice.dart';
 
 class ApiClient {
   static const String baseUrl = 'http://localhost:8000/api';
@@ -105,6 +106,37 @@ class ApiClient {
     await _dio.delete('/products/products/$id/');
   }
 
+  // ─── Invoices ────────────────────────────────────────
+  // InvoiceViewSet registered under r"invoices" in invoices/urls.py,
+  // included from "api/invoices/" in root. Full path = /api/invoices/invoices/
+
+  Future<List<Invoice>> getInvoices({String? status, String? search, String? dateFrom, String? dateTo}) async {
+    final response = await _dio.get('/invoices/invoices/', queryParameters: {
+      if (status != null && status.isNotEmpty) 'status': status,
+      if (search != null && search.isNotEmpty) 'invoice_number': search,
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
+    });
+    return _extractList(response.data).map((e) => Invoice.fromJson(e)).toList();
+  }
+
+  Future<Invoice> getInvoice(int id) async {
+    final response = await _dio.get('/invoices/invoices/$id/');
+    return Invoice.fromJson(response.data);
+  }
+
+  Future<void> generateInvoicePdf(int id) async {
+    await _dio.post('/invoices/invoices/$id/generate_pdf/');
+  }
+
+  Future<void> markInvoicePaid(int id) async {
+    await _dio.post('/invoices/invoices/$id/mark_paid/');
+  }
+
+  Future<void> cancelInvoice(int id) async {
+    await _dio.post('/invoices/invoices/$id/cancel/');
+  }
+
   // ─── Categories ─────────────────────────────────────
 
   Future<List<Category>> getCategories() async {
@@ -141,9 +173,24 @@ class ApiClient {
     return Transaction.fromJson(response.data);
   }
 
+  Future<Transaction> resumeTransaction(int id) async {
+    final response = await _dio.post('/transactions/transactions/$id/resume/');
+    return Transaction.fromJson(response.data);
+  }
+
   Future<Transaction> cancelTransaction(int id) async {
     final response = await _dio.post('/transactions/transactions/$id/cancel/');
     return Transaction.fromJson(response.data);
+  }
+
+  Future<Transaction> refundTransaction(int id, {String reason = 'Refund'}) async {
+    final response = await _dio.post('/transactions/transactions/$id/refund/', data: {'reason': reason});
+    return Transaction.fromJson(response.data);
+  }
+
+  Future<void> printReceipt(int id) async {
+    // Just fetch receipt data — actual printing needs platform channel
+    await _dio.get('/transactions/transactions/$id/receipt/');
   }
 
   // ─── Customers ──────────────────────────────────────
