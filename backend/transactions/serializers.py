@@ -48,7 +48,8 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        fields = ['customer', 'subtotal', 'discount_type', 'discount_value', 'tax_percent', 'tax_amount', 'total', 'payment_method', 'payment_amount', 'change_amount', 'notes', 'items']
+        fields = ['id', 'customer', 'subtotal', 'discount_type', 'discount_value', 'tax_percent', 'tax_amount', 'total', 'payment_method', 'payment_amount', 'change_amount', 'notes', 'items', 'invoice_number', 'status', 'created_at']
+        read_only_fields = ['id', 'invoice_number', 'created_at']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
@@ -60,10 +61,20 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 unit_price = item_data.get('unit_price', 0)
                 discount = item_data.get('discount', 0)
                 item_subtotal = qty * unit_price - discount
+                # Handle product: DRF may pass resolved Product instance or raw ID
+                product = item_data.get('product')
+                if hasattr(product, 'id'):
+                    product_id = product.id
+                elif isinstance(product, int):
+                    product_id = product
+                else:
+                    product_id = item_data.get('product_id')
+                variant = item_data.get('variant')
+                variant_id = variant.id if hasattr(variant, 'id') else (variant if isinstance(variant, int) else item_data.get('variant_id'))
                 TransactionItem.objects.create(
                     transaction=transaction_obj,
-                    product_id=item_data.get('product_id') or (item_data.get('product').id if item_data.get('product') else None),
-                    variant_id=item_data.get('variant_id'),
+                    product_id=product_id,
+                    variant_id=variant_id,
                     quantity=qty,
                     unit_price=unit_price,
                     discount=discount,

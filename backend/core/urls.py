@@ -6,5 +6,7 @@ router = DefaultRouter()
 router.register(r'', StoreSettingsViewSet, basename='store-settings')
 
 urlpatterns = [
-    path('', include(router.urls)),
+    # Singleton settings — no pk needed
+    path('', StoreSettingsViewSet.as_view({'get': 'list', 'patch': 'partial_update', 'put': 'update'}), name='settings-singleton'),
+    path('<int:pk>/', include(router.urls)),
 ]

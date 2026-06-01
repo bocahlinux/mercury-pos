@@ -28,9 +28,20 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return ReceiptSerializer
         return TransactionDetailSerializer
 
+    def create(self, request, *args, **kwargs):
+        """Create transaction and return receipt data"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        txn = self.perform_create(serializer)
+        # Refresh to load related items created in serializer
+        txn.refresh_from_db()
+        # Return receipt data using ReceiptSerializer
+        receipt_serializer = ReceiptSerializer(txn)
+        return Response(receipt_serializer.data, status=status.HTTP_201_CREATED)
+
     def perform_create(self, serializer):
         invoice = generate_invoice_number()
-        serializer.save(cashier=self.request.user, invoice_number=invoice)
+        return serializer.save(cashier=self.request.user, invoice_number=invoice)
 
     @action(detail=True, methods=['get'])
     def receipt(self, request, pk=None):
