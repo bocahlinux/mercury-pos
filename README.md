@@ -166,8 +166,8 @@ mercury-pos/
 | **Phase 1** | API Integration | ✅ Selesai | Web + Flutter connected to API, auth, CRUD |
 | **Phase 2** | Cart & Checkout | ✅ Selesai | Full cart logic, receipt preview, mixed payment, zustand store |
 | **Phase 3** | Invoice & History | ✅ Selesai | PDF generation, mark paid/cancel, refund + stock restore, hold/resume |
-|| **Phase 4** | Dashboard & Reports | ✅ Selesai | Charts, comparison%, low stock, payment breakdown, Excel export, customer report |
-|| **Phase 5** | Multi-User & Audit | 📋 Planned | Role-based access, audit log |
+| **Phase 4** | Dashboard & Reports | ✅ Selesai | Charts, comparison%, low stock, payment breakdown, Excel export, customer report |
+| **Phase 5** | Multi-User & Audit | 📋 Planned | Role-based access, audit log |
 | **Phase 6** | Flutter Parity | 📋 Planned | Full feature parity + offline support |
 | **Phase 7** | Polish & Release | 📋 Planned | Testing, docs, open-source release |
 
