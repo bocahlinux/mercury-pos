@@ -69,8 +69,8 @@ Aplikasi POS **gratis, open-source, self-hosted** dengan fitur lengkap:
 | 🛒 **POS & Transaksi** | Keranjang, checkout, multi-payment, diskon, pajak | ✅ |
 | 🧾 **Invoice** | Auto-generated invoice, PDF export | ✅ |
 | 👥 **Pelanggan** | CRUD customer, loyalty points, riwayat transaksi | ✅ |
-| 📊 **Dashboard** | Statistik penjualan harian/mingguan/bulanan | ✅ |
-| 📈 **Laporan** | Sales report, product report, export Excel | ✅ |
+| 📊 **Dashboard** | Statistik penjualan harian/mingguan/bulanan, comparison %, low stock alerts, payment breakdown | ✅ |
+| 📈 **Laporan** | Sales/Product/Customer report, filter periode, export Excel | ✅ |
 | ⚙️ **Pengaturan Toko** | Info toko, logo, pajak, struk header/footer | ✅ |
 
 ### Planned Features
@@ -166,8 +166,8 @@ mercury-pos/
 | **Phase 1** | API Integration | ✅ Selesai | Web + Flutter connected to API, auth, CRUD |
 | **Phase 2** | Cart & Checkout | ✅ Selesai | Full cart logic, receipt preview, mixed payment, zustand store |
 | **Phase 3** | Invoice & History | ✅ Selesai | PDF generation, mark paid/cancel, refund + stock restore, hold/resume |
-| **Phase 4** | Dashboard & Reports | 🔄 Partial | Basic dashboard + reports, charts, filters |
-| **Phase 5** | Multi-User & Audit | 📋 Planned | Role-based access, audit log |
+|| **Phase 4** | Dashboard & Reports | ✅ Selesai | Charts, comparison%, low stock, payment breakdown, Excel export, customer report |
+|| **Phase 5** | Multi-User & Audit | 📋 Planned | Role-based access, audit log |
 | **Phase 6** | Flutter Parity | 📋 Planned | Full feature parity + offline support |
 | **Phase 7** | Polish & Release | 📋 Planned | Testing, docs, open-source release |
 
@@ -212,6 +212,22 @@ mercury-pos/
 | Refund + stock restore | ✅ | ✅ | ✅ |
 | Mark paid / Cancel invoice | ✅ | ✅ | ✅ |
 | StockMovement logging | — | — | ✅ |
+
+### Phase 4 Detail (✅ Selesai)
+
+| Task | Web | Flutter | Backend |
+|---|---|---|---|
+| Dashboard comparison % (today/week/month) | ✅ | ✅ | ✅ |
+| Low stock alerts widget | ❌ | ✅ | ✅ |
+| Payment method breakdown (pie chart) | ✅ | ✅ | ✅ |
+| Category sales breakdown (pie chart) | ✅ | ❌ | ✅ |
+| Sales trend 7 days (line chart) | ✅ | ❌ | ✅ |
+| Recent invoices widget | ✅ | ❌ | ✅ |
+| Sales report with filters | ✅ | ✅ | ✅ |
+| Product report with filters | ✅ | ✅ | ✅ |
+| Customer report | ✅ | ✅ | ✅ |
+| Excel export (sales/product/customer) | ✅ | ❌ | ✅ |
+| Flutter Reports screen (3 tabs) | — | ✅ | — |
 
 ---
 
@@ -307,13 +323,17 @@ flutter run
 |---|---|---|
 | GET/POST | `/customers/` | List/Create customer |
 | GET/PUT/DELETE | `/customers/{id}/` | Detail customer |
-
 ### Reports
+
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/reports/dashboard/` | Statistik dashboard |
-| GET | `/reports/sales-report/` | Laporan penjualan |
-| GET | `/reports/product-report/` | Laporan produk |
+| GET | `/reports/dashboard/` | Statistik dashboard (summary, comparison, charts) |
+| GET | `/reports/sales-report/` | Laporan penjualan (daily/weekly/monthly/yearly) |
+| GET | `/reports/product-report/` | Laporan produk terlaris |
+| GET | `/reports/customer-report/` | Laporan pelanggan |
+| GET | `/reports/sales-report/export/` | Export sales report ke Excel |
+| GET | `/reports/product-report/export/` | Export product report ke Excel |
+| GET | `/reports/customer-report/export/` | Export customer report ke Excel |
 
 ### Settings
 | Method | Endpoint | Description |
@@ -344,8 +364,8 @@ flutter run
 - [x] Product Management
 - [x] POS & Transactions
 - [x] Invoice (PDF)
-- [x] Dashboard & Reports
-- [ ] Full API integration (Phase 1)
+- [x] Dashboard & Reports (charts, comparison%, low stock, Excel export)
+- [ ] Multi-user & audit log (Phase 5)
 - [ ] Error handling & loading states
 
 ### v1.1 (Next)
