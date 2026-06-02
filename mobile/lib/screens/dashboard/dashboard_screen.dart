@@ -6,6 +6,7 @@ import '../products/product_list_screen.dart';
 import '../transactions/transaction_list_screen.dart';
 import '../customers/customer_list_screen.dart';
 import '../settings_screen.dart';
+import 'reports_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -75,48 +76,132 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 16),
-                    // Stat cards row 1
+                    // Stat cards row 1: Today + comparison
                     Row(children: [
                       Expanded(
                         child: _StatCard(
                           title: 'Penjualan Hari Ini',
-                          value: _formatCurrency(_data['today_sales']),
+                          value: _formatCurrency(_data['summary']?['today_sales'] ?? _data['today_sales']),
                           icon: Icons.today,
                           color: Colors.blue,
+                          change: _data['comparison']?['sales_change_pct']?.toDouble() ?? 0,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _StatCard(
                           title: 'Transaksi',
-                          value: '${_data['today_transactions'] ?? 0}',
+                          value: '${_data['summary']?['today_transactions'] ?? (_data['today_transactions'] ?? 0)}',
                           icon: Icons.receipt,
                           color: Colors.green,
                         ),
                       ),
                     ]),
                     const SizedBox(height: 12),
-                    // Stat cards row 2
+                    // Stat cards row 2: Week + Month with comparison
                     Row(children: [
                       Expanded(
                         child: _StatCard(
                           title: 'Penjualan Minggu',
-                          value: _formatCurrency(_data['week_sales']),
+                          value: _formatCurrency(_data['summary']?['week_sales'] ?? _data['week_sales']),
                           icon: Icons.calendar_view_week,
                           color: Colors.orange,
+                          change: _data['comparison']?['week_change_pct']?.toDouble() ?? 0,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _StatCard(
                           title: 'Penjualan Bulan',
-                          value: _formatCurrency(_data['month_sales']),
+                          value: _formatCurrency(_data['summary']?['month_sales'] ?? _data['month_sales']),
                           icon: Icons.calendar_month,
                           color: Colors.purple,
+                          change: _data['comparison']?['month_change_pct']?.toDouble() ?? 0,
                         ),
                       ),
                     ]),
+                    const SizedBox(height: 12),
+                    // Low stock alert
+                    if ((_data['low_stock']?['count'] ?? 0) > 0)
+                      Card(
+                        color: Colors.orange.shade50,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Icon(Icons.warning_amber, color: Colors.orange.shade700),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Stok Menipis',
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade900),
+                                    ),
+                                    Text(
+                                      '${_data['low_stock']['count']} produk di bawah minimum stok',
+                                      style: TextStyle(color: Colors.orange.shade700, fontSize: 13),
+                                    ),
+                                    if ((_data['low_stock']['products'] as List?)?.isNotEmpty == true)
+                                      ...(_data['low_stock']['products'] as List).take(3).map((p) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            '• ${p['name'] ?? '-'}: ${p['stock'] ?? 0} tersisa',
+                                            style: TextStyle(fontSize: 12, color: Colors.orange.shade600),
+                                          ),
+                                        );
+                                      }),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 16),
+                    // Payment method breakdown
+                    if ((_data['payment_breakdown'] as List?)?.isNotEmpty == true)
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Metode Pembayaran (Bulan Ini)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 12),
+                              ...(_data['payment_breakdown'] as List).map((p) {
+                                final method = p['payment_method'] ?? '-';
+                                final total = _formatCurrency(p['total']);
+                                final count = p['count'] ?? 0;
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(children: [
+                                        Icon(
+                                          method == 'cash' ? Icons.payments :
+                                          method == 'transfer' ? Icons.account_balance :
+                                          method == 'ewallet' ? Icons.phone_android :
+                                          Icons.payment,
+                                          size: 18,
+                                          color: Colors.grey,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(method.toUpperCase()),
+                                      ]),
+                                      Text('$count txn • $total', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
                     // Top Products
                     if (_data['top_products'] != null && (_data['top_products'] as List).isNotEmpty) ...[
                       Card(
@@ -155,8 +240,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Transaksi Terakhir', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Transaksi Terakhir', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                  TextButton(
+                                    onPressed: () {
+                                      // Navigate to transactions tab — handled by parent
+                                    },
+                                    child: const Text('Lihat Semua'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
                               ...(_data['recent_transactions'] as List).take(5).map((t) {
                                 final invoice = t['invoice_number'] ?? '-';
                                 final total = _formatCurrency(t['total']);
@@ -173,36 +269,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                     ],
-                    // Quick Actions
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Aksi Cepat', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 12),
-                            ListTile(
-                              leading: CircleAvatar(backgroundColor: Colors.indigo.shade50, child: const Icon(Icons.point_of_sale, color: Colors.indigo)),
-                              title: const Text('Mulai Transaksi'),
-                              subtitle: const Text('Buka POS untuk mulai jalan'),
-                              onTap: () {
-                                // Navigate to POS tab — requires MainScreen state access
-                                // For now, use the bottom nav bar
-                              },
-                            ),
-                            ListTile(
-                              leading: CircleAvatar(backgroundColor: Colors.green.shade50, child: const Icon(Icons.add_box, color: Colors.green)),
-                              title: const Text('Tambah Produk'),
-                              subtitle: const Text('Daftarkan produk baru'),
-                              onTap: () {
-                                // Navigate to Products tab
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -225,7 +291,8 @@ class _StatCard extends StatelessWidget {
   final String title, value;
   final IconData icon;
   final Color color;
-  const _StatCard({required this.title, required this.value, required this.icon, required this.color});
+  final double? change;
+  const _StatCard({required this.title, required this.value, required this.icon, required this.color, this.change});
 
   @override
   Widget build(BuildContext context) {
@@ -242,6 +309,20 @@ class _StatCard extends StatelessWidget {
             ]),
             const SizedBox(height: 8),
             Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            if (change != null && change != 0) ...[
+              const SizedBox(height: 4),
+              Row(children: [
+                Icon(
+                  change! >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                  size: 14,
+                  color: change! >= 0 ? Colors.green : Colors.red,
+                ),
+                Text(
+                  '${change!.abs().toStringAsFixed(1)}%',
+                  style: TextStyle(fontSize: 12, color: change! >= 0 ? Colors.green : Colors.red),
+                ),
+              ]),
+            ],
           ],
         ),
       ),
@@ -267,7 +348,7 @@ class _MainScreenState extends State<MainScreen> {
     ProductListScreen(),
     TransactionListScreen(),
     CustomerListScreen(),
-    SettingsScreen(),
+    ReportsScreen(),
   ];
 
   @override
@@ -307,9 +388,9 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Pelanggan',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: Icon(Icons.analytics_outlined),
+            selectedIcon: Icon(Icons.analytics),
+            label: 'Reports',
           ),
         ],
       ),

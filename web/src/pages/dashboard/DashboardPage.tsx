@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card';
 import { CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ShoppingCart, Receipt, Calendar, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell } from 'recharts';
 
 interface StatCardProps {
   icon: React.ReactElement;
@@ -34,6 +36,17 @@ interface DashboardData {
     total: number;
     customer_name?: string;
   }[];
+  recent_invoices: {
+    id: string;
+    invoice_number: string;
+    status: string;
+    total: number;
+    customer_name?: string;
+    issued_date: string;
+  }[];
+  sales_trend: { date: string; total_sales: number }[];
+  payment_breakdown: { payment_method: string; total: number; count: number }[];
+  category_breakdown: { product__category__name: string; total_sold: number; revenue: number }[];
 }
 
 const DashboardPage: React.FC = () => {
@@ -101,27 +114,144 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
-      {/* Top products bar chart */}
+      {/* Sales trend line chart */}
       <Card className="p-4">
         <CardHeader>
-          <CardTitle>Top Products</CardTitle>
+          <CardTitle>Sales Trend (Last 7 Days)</CardTitle>
         </CardHeader>
         <CardContent className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.top_products} layout="vertical">
-              <XAxis type="number" domain={[0, 'auto']} tickFormatter={(value) => formatter.format(value)} />
-              <YAxis dataKey="product__name" type="category" />
+            <LineChart data={data.sales_trend}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis tickFormatter={(value) => formatter.format(Number(value))} />
               <Tooltip formatter={(value) => formatter.format(Number(value))} />
-              <Bar dataKey="revenue" fill="#3b82f6" />
-            </BarChart>
+              <Line type="monotone" dataKey="total_sales" stroke="#8884d8" name="Sales" />
+            </LineChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      {/* Recent transactions table */}
+      {/* Top products bar chart and Payment method pie chart */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Top products bar chart */}
+        <Card className="p-4">
+          <CardHeader>
+            <CardTitle>Top Products</CardTitle>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.top_products} layout="vertical">
+                <XAxis type="number" domain={[0, 'auto']} tickFormatter={(value) => formatter.format(value)} />
+                <YAxis dataKey="product__name" type="category" />
+                <Tooltip formatter={(value) => formatter.format(Number(value))} />
+                <Bar dataKey="revenue" fill="#3b82f6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Payment method pie chart */}
+        <Card className="p-4">
+          <CardHeader>
+            <CardTitle>Payment Method Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.payment_breakdown}
+                  dataKey="total"
+                  nameKey="payment_method"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  labelLine={false}
+                  label={({ name, value, percent }) => (
+                    <div>
+                      {name}: {formatter.format(Number(value))} ({Number(percent * 100).toFixed(1)}%)
+                    </div>
+                  )}
+                >
+                  {data.payment_breakdown.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={`hsl(${index * 50}, 70%, 50%)`} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Category breakdown pie chart and Recent transactions table */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Category breakdown pie chart */}
+        <Card className="p-4">
+          <CardHeader>
+            <CardTitle>Category Sales Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.category_breakdown}
+                  dataKey="revenue"
+                  nameKey="product__category__name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  labelLine={false}
+                  label={({ name, value, percent }) => (
+                    <div>
+                      {name}: {formatter.format(Number(value))} ({Number(percent * 100).toFixed(1)}%)
+                    </div>
+                  )}
+                >
+                  {data.category_breakdown.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={`hsl(${index * 40 + 20}, 70%, 50%)`} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Recent transactions table */}
+        <Card className="p-4">
+          <CardHeader>
+            <CardTitle>Recent Transactions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full text-sm text-left text-gray-700">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="px-4 py-2">#</th>
+                  <th className="px-4 py-2">Date</th>
+                  <th className="px-4 py-2">Customer</th>
+                  <th className="px-4 py-2 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recent_transactions.slice(0, 10).map((tx, idx) => (
+                  <tr key={tx.id} className="border-t">
+                    <td className="px-4 py-2">{idx + 1}</td>
+                    <td className="px-4 py-2">{new Date(tx.created_at).toLocaleDateString('id-ID')}</td>
+                    <td className="px-4 py-2">{tx.customer_name || '-'}</td>
+                    <td className="px-4 py-2 text-right">{formatter.format(tx.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent invoices table */}
       <Card className="p-4">
         <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
+          <CardTitle>Recent Invoices</CardTitle>
         </CardHeader>
         <CardContent>
           <table className="w-full text-sm text-left text-gray-700">
@@ -131,15 +261,29 @@ const DashboardPage: React.FC = () => {
                 <th className="px-4 py-2">Date</th>
                 <th className="px-4 py-2">Customer</th>
                 <th className="px-4 py-2 text-right">Amount</th>
+                <th className="px-4 py-2">Status</th>
               </tr>
             </thead>
             <tbody>
-              {data.recent_transactions.slice(0, 10).map((tx, idx) => (
-                <tr key={tx.id} className="border-t">
+              {data.recent_invoices.slice(0, 5).map((inv, idx) => (
+                <tr key={inv.id} className="border-t">
                   <td className="px-4 py-2">{idx + 1}</td>
-                  <td className="px-4 py-2">{new Date(tx.created_at).toLocaleDateString('id-ID')}</td>
-                  <td className="px-4 py-2">{tx.customer_name || '-'}</td>
-                  <td className="px-4 py-2 text-right">{formatter.format(tx.total)}</td>
+                  <td className="px-4 py-2">{new Date(inv.issued_date).toLocaleDateString('id-ID')}</td>
+                  <td className="px-4 py-2">{inv.customer_name || '-'}</td>
+                  <td className="px-4 py-2 text-right">{formatter.format(inv.total)}</td>
+                  <td className="px-4 py-2">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        inv.status === 'paid'
+                          ? 'bg-green-100 text-green-800'
+                          : inv.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {inv.status}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -221,6 +221,33 @@ class ApiClient {
     return response.data;
   }
 
+  // ─── Reports ─────────────────────────────────────────
+
+  Future<Map<String, dynamic>> getSalesReport({String period = 'daily', String? dateFrom, String? dateTo}) async {
+    final response = await _dio.get('/reports/sales-report/', queryParameters: {
+      'period': period,
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
+    });
+    return response.data;
+  }
+
+  Future<List<dynamic>> getProductReport({String? dateFrom, String? dateTo}) async {
+    final response = await _dio.get('/reports/product-report/', queryParameters: {
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
+    });
+    return _extractList(response.data['data']);
+  }
+
+  Future<List<dynamic>> getCustomerReport({String? dateFrom, String? dateTo}) async {
+    final response = await _dio.get('/reports/customer-report/', queryParameters: {
+      if (dateFrom != null && dateFrom.isNotEmpty) 'date_from': dateFrom,
+      if (dateTo != null && dateTo.isNotEmpty) 'date_to': dateTo,
+    });
+    return _extractList(response.data['data']);
+  }
+
   // ─── Store Settings ─────────────────────────────────
   // StoreSettingsViewSet registered under r"" in core/urls.py,
   // included from "api/settings/" in root. Full path = /api/settings/ (single prefix, OK)
