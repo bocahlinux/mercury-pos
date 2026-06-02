@@ -1,7 +1,8 @@
 import io
 from datetime import datetime, timedelta
 from django.utils import timezone
-from django.db.models import Sum, Count, F, Q, Avg
+from django.db.models import Sum, Count, F, Q, Avg, Value
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -243,10 +244,21 @@ class ProductReportView(APIView):
         report = items.values('product__name', 'product__sku').annotate(
             total_sold=Sum('quantity'),
             revenue=Sum('subtotal'),
-            avg_price=Sum('subtotal') / Sum('quantity'),
         ).order_by('-total_sold')
 
-        return Response({'data': list(report)})
+        report_list = []
+        for item in report:
+            total_sold = item['total_sold'] or 0
+            revenue = item['revenue'] or 0
+            report_list.append({
+                'product__name': item['product__name'],
+                'product__sku': item['product__sku'],
+                'total_sold': total_sold,
+                'revenue': revenue,
+                'avg_price': revenue / total_sold if total_sold > 0 else 0,
+            })
+
+        return Response({'data': report_list})
 
 
 class CustomerReportView(APIView):
@@ -256,31 +268,29 @@ class CustomerReportView(APIView):
         date_from = request.query_params.get('date_from')
         date_to = request.query_params.get('date_to')
 
-        customers = Customer.objects.all()
-
+        tx_filter = Q(transaction__status='completed')
         if date_from:
-            customers = customers.filter(created_at__date__gte=date_from)
+            tx_filter &= Q(transaction__created_at__date__gte=date_from)
         if date_to:
-            customers = customers.filter(created_at__date__lte=date_to)
+            tx_filter &= Q(transaction__created_at__date__lte=date_to)
 
-        report = []
-        for c in customers:
-            tx_qs = Transaction.objects.filter(customer=c, status='completed')
-            if date_from:
-                tx_qs = tx_qs.filter(created_at__date__gte=date_from)
-            if date_to:
-                tx_qs = tx_qs.filter(created_at__date__lte=date_to)
-            agg = tx_qs.aggregate(total_spent=Sum('total'), order_count=Count('id'))
-            report.append({
+        customers = Customer.objects.annotate(
+            total_spent=Coalesce(Sum('transaction__total', filter=tx_filter), Value(0)),
+            order_count=Coalesce(Count('transaction', filter=tx_filter), Value(0)),
+        ).order_by('-total_spent')
+
+        report = [
+            {
                 'id': c.id,
                 'name': c.name,
                 'email': c.email,
                 'phone': c.phone,
-                'total_spent': agg['total_spent'] or 0,
-                'order_count': agg['order_count'] or 0,
-            })
+                'total_spent': c.total_spent,
+                'order_count': c.order_count,
+            }
+            for c in customers
+        ]
 
-        report.sort(key=lambda x: x['total_spent'], reverse=True)
         return Response({'data': report})
 
 
