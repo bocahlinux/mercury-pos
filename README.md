@@ -73,15 +73,20 @@ Aplikasi POS **gratis, open-source, self-hosted** dengan fitur lengkap:
 | 📈 **Laporan** | Sales/Product/Customer report, filter periode, export Excel | ✅ |
 | ⚙️ **Pengaturan Toko** | Info toko, logo, pajak, struk header/footer | ✅ |
 
+### Mobile Features (Phase 6)
+
+| Fitur | Deskripsi | Status |
+|---|---|---|
+| 📱 **Barcode Scanner** | Scan barcode via kamera untuk cari produk di POS | ✅ |
+| 🌙 **Dark Mode** | Tema gelap untuk Flutter app (dengan persistence) | ✅ |
+| 🔄 **Offline Sync** | Flutter app jalan offline, sync saat online | 📋 |
+
 ### Planned Features
 
 | Fitur | Deskripsi |
 |---|---|
-| 📱 **Barcode Scanner** | Scan barcode via kamera mobile |
 | 🏪 **Multi-Store** | Support banyak cabang toko |
 | 📲 **WhatsApp Notif** | Kirim invoice/receipt via WhatsApp |
-| 🔄 **Offline Sync** | Flutter app jalan offline, sync saat online |
-| 🌙 **Dark Mode** | Tema gelap untuk web dan mobile |
 | 🌐 **Multi-Bahasa** | i18n support (ID, EN) |
 | 📉 **Inventory Alert** | Notifikasi stok rendah |
 
@@ -168,7 +173,7 @@ mercury-pos/
 | **Phase 3** | Invoice & History | ✅ Selesai | PDF generation, mark paid/cancel, refund + stock restore, hold/resume |
 | **Phase 4** | Dashboard & Reports | ✅ Selesai | Charts, comparison%, low stock, payment breakdown, Excel export, customer report |
 | **Phase 5** | Multi-User & Audit | 📋 Planned | Role-based access, audit log |
-| **Phase 6** | Flutter Parity | 📋 Planned | Full feature parity + offline support |
+| **Phase 6** | Flutter Parity | ✅ Selesai | Charts, product CRUD, dark mode, barcode scanner, settings, transaction search |
 | **Phase 7** | Polish & Release | 📋 Planned | Testing, docs, open-source release |
 
 ### Phase 1 Detail (✅ Selesai)
@@ -219,15 +224,28 @@ mercury-pos/
 |---|---|---|---|
 | Dashboard comparison % (today/week/month) | ✅ | ✅ | ✅ |
 | Low stock alerts widget | ❌ | ✅ | ✅ |
-| Payment method breakdown (pie chart) | ✅ | ✅ | ✅ |
-| Category sales breakdown (pie chart) | ✅ | ❌ | ✅ |
-| Sales trend 7 days (line chart) | ✅ | ❌ | ✅ |
+| Payment method breakdown | ✅ | ✅ | ✅ |
+| Category sales breakdown (pie chart) | ✅ | ✅ | ✅ |
+| Sales trend 7 days (line chart) | ✅ | ✅ | ✅ |
 | Recent invoices widget | ✅ | ❌ | ✅ |
 | Sales report with filters | ✅ | ✅ | ✅ |
 | Product report with filters | ✅ | ✅ | ✅ |
 | Customer report | ✅ | ✅ | ✅ |
 | Excel export (sales/product/customer) | ✅ | ❌ | ✅ |
 | Flutter Reports screen (3 tabs) | — | ✅ | — |
+
+### Phase 6 Detail (✅ Selesai)
+
+| Task | Flutter | Notes |
+|---|---|---|
+| Dashboard LineChart (7 hari) | ✅ | fl_chart, data dari `/reports/dashboard/` |
+| Dashboard PieChart (kategori) | ✅ | fl_chart, data dari `category_breakdown` |
+| Product create/edit form | ✅ | Full form: nama, SKU, barcode, kategori, harga, stok |
+| Product delete | ✅ | PopupMenuButton + confirm dialog |
+| Transaction search | ✅ | Debounce 400ms, pass `search` param ke API |
+| Dark mode | ✅ | ThemeService + SharedPreferences + toggle di Settings |
+| Barcode scanner | ✅ | mobile_scanner, scan → cari produk → add to cart |
+| Settings updateStoreSettings | ✅ | PATCH `/settings/` |
 
 ---
 
@@ -359,26 +377,24 @@ flutter run
 ### v1.0 (Current)
 - [x] Backend API (Django REST)
 - [x] Web App (React) — 10 pages
-- [x] Mobile App (Flutter) — 7 screens
+- [x] Mobile App (Flutter) — 8 screens + barcode scanner
 - [x] JWT Authentication
-- [x] Product Management
-- [x] POS & Transactions
-- [x] Invoice (PDF)
+- [x] Product Management (full CRUD)
+- [x] POS & Transactions (cart, checkout, hold/resume, refund)
+- [x] Invoice (PDF, mark paid/cancel)
 - [x] Dashboard & Reports (charts, comparison%, low stock, Excel export)
+- [x] Flutter Parity (charts, product CRUD, dark mode, barcode scanner, settings)
 - [ ] Multi-user & audit log (Phase 5)
-- [ ] Error handling & loading states
 
 ### v1.1 (Next)
-- [ ] Barcode scanner (mobile)
 - [ ] Receipt printing (thermal printer)
-- [ ] Excel export for reports
 - [ ] WhatsApp notification
-- [ ] Dark mode
+- [ ] Offline sync (Flutter)
+- [ ] Biometric login
 
 ### v2.0 (Future)
 - [ ] Multi-store support
 - [ ] Supplier & Purchase Order
-- [ ] Offline sync (Flutter)
 - [ ] Multi-language (i18n)
 - [ ] Loyalty program
 

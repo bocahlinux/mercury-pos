@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../../models/product.dart';
+import 'product_form_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -35,6 +36,45 @@ class _ProductListScreenState extends State<ProductListScreen> {
     } catch (e) {
       setState(() => _loading = false);
     }
+  }
+
+  void _openForm([Product? product]) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => ProductFormScreen(product: product)),
+    );
+    if (result == true) _load();
+  }
+
+  void _deleteProduct(Product product) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Produk'),
+        content: Text('Yakin hapus "${product.name}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _api.deleteProduct(product.id);
+                _load();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Produk dihapus')));
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal hapus: $e')));
+                }
+              }
+            },
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -87,16 +127,32 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 child: const Icon(Icons.inventory_2, color: Colors.indigo),
                               ),
                               title: Text(p.name),
-                              subtitle: Text('${p.skt ?? ''} • Stok: ${p.stock}'),
-                              trailing: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                              subtitle: Text('${p.sku ?? ''} • Stok: ${p.stock}'),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('Rp ${p.sellPrice.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  if (p.stock <= p.minStockAlert)
-                                    const Text('Stok Rendah', style: TextStyle(fontSize: 11, color: Colors.red)),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text('Rp ${p.sellPrice.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      if (p.stock <= p.minStockAlert)
+                                        const Text('Stok Rendah', style: TextStyle(fontSize: 11, color: Colors.red)),
+                                    ],
+                                  ),
+                                  PopupMenuButton<String>(
+                                    onSelected: (v) {
+                                      if (v == 'edit') _openForm(p);
+                                      if (v == 'delete') _deleteProduct(p);
+                                    },
+                                    itemBuilder: (_) => [
+                                      const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                      const PopupMenuItem(value: 'delete', child: Text('Hapus')),
+                                    ],
+                                  ),
                                 ],
                               ),
+                              onTap: () => _openForm(p),
                             );
                           },
                         ),
@@ -105,9 +161,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Navigate to product form
-        },
+        onPressed: () => _openForm(),
         child: const Icon(Icons.add),
       ),
     );

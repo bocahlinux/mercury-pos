@@ -149,9 +149,10 @@ class ApiClient {
 
   // ─── Transactions ───────────────────────────────────
 
-  Future<List<Transaction>> getTransactions({String? status, String? dateFrom, String? dateTo}) async {
+  Future<List<Transaction>> getTransactions({String? status, String? search, String? dateFrom, String? dateTo}) async {
     final response = await _dio.get('/transactions/transactions/', queryParameters: {
       if (status != null) 'status': status,
+      if (search != null && search.isNotEmpty) 'search': search,
       if (dateFrom != null) 'date_from': dateFrom,
       if (dateTo != null) 'date_to': dateTo,
     });
@@ -221,6 +222,18 @@ class ApiClient {
     return response.data;
   }
 
+  // ─── Dashboard helpers ─────────────────────────────
+
+  Future<List<dynamic>> getDashboardSalesTrend() async {
+    final dashboard = await getDashboard();
+    return (dashboard['sales_trend'] as List?) ?? [];
+  }
+
+  Future<List<dynamic>> getDashboardCategoryBreakdown() async {
+    final dashboard = await getDashboard();
+    return (dashboard['category_breakdown'] as List?) ?? [];
+  }
+
   // ─── Reports ─────────────────────────────────────────
 
   Future<Map<String, dynamic>> getSalesReport({String period = 'daily', String? dateFrom, String? dateTo}) async {
@@ -254,6 +267,11 @@ class ApiClient {
 
   Future<Map<String, dynamic>> getStoreSettings() async {
     final response = await _dio.get('/settings/');
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> updateStoreSettings(Map<String, dynamic> data) async {
+    final response = await _dio.patch('/settings/', data: data);
     return response.data;
   }
 }

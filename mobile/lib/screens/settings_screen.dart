@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../api/api_client.dart';
+import '../main.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -119,6 +121,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 12),
                     TextField(controller: _currencyController, decoration: const InputDecoration(labelText: 'Mata Uang')),
                   ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Dark mode toggle
+            Consumer<ThemeService>(
+              builder: (context, themeService, _) => Card(
+                child: ListTile(
+                  leading: Icon(themeService.isDark ? Icons.dark_mode : Icons.light_mode),
+                  title: const Text('Mode Gelap'),
+                  trailing: Switch(
+                    value: themeService.isDark,
+                    onChanged: (_) => themeService.toggle(),
+                  ),
                 ),
               ),
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../services/auth_service.dart';
 import '../pos/pos_screen.dart';
 import '../products/product_list_screen.dart';
@@ -19,6 +20,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final ApiClient _api = ApiClient();
   bool _loading = true;
   Map<String, dynamic> _data = {};
+  List<dynamic> _salesTrend = [];
+  List<dynamic> _categoryBreakdown = [];
 
   @override
   void initState() {
@@ -30,7 +33,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _loading = true);
     try {
       final data = await _api.getDashboard();
-      setState(() { _data = data; _loading = false; });
+      final trend = await _api.getDashboardSalesTrend();
+      final categories = await _api.getDashboardCategoryBreakdown();
+      setState(() {
+        _data = data;
+        _salesTrend = trend;
+        _categoryBreakdown = categories;
+        _loading = false;
+      });
     } catch (e) {
       setState(() { _data = {}; _loading = false; });
     }
@@ -121,6 +131,121 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ]),
                     const SizedBox(height: 12),
+                    // Sales Trend Chart
+                    if (_salesTrend.isNotEmpty) ...[
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Tren Penjualan (7 Hari)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 180,
+                                child: LineChart(
+                                  LineChartData(
+                                    gridData: FlGridData(show: true, drawVerticalLine: false),
+                                    titlesData: FlTitlesData(
+                                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                      bottomTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          reservedSize: 30,
+                                          interval: 1,
+                                          getTitlesWidget: (value, meta) {
+                                            final idx = value.toInt();
+                                            if (idx < 0 || idx >= _salesTrend.length) return const Text('');
+                                            final date = _salesTrend[idx]['date']?.toString() ?? '';
+                                            final parts = date.split('-');
+                                            if (parts.length >= 3) {
+                                              return Text('${parts[2]}/${parts[1]}', style: const TextStyle(fontSize: 10));
+                                            }
+                                            return const Text('');
+                                          },
+                                        ),
+                                      ),
+                                      leftTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          reservedSize: 40,
+                                          getTitlesWidget: (value, meta) {
+                                            if (value >= 1000000) {
+                                              return Text('${(value/1000000).toStringAsFixed(1)}jt', style: const TextStyle(fontSize: 9));
+                                            }
+                                            if (value >= 1000) {
+                                              return Text('${(value/1000).toStringAsFixed(0)}rb', style: const TextStyle(fontSize: 9));
+                                            }
+                                            return Text(value.toStringAsFixed(0), style: const TextStyle(fontSize: 9));
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    borderData: FlBorderData(show: false),
+                                    lineBarsData: [
+                                      LineChartBarData(
+                                        spots: _salesTrend.asMap().entries.map((e) {
+                                          final sales = (e.value['total_sales'] as num?)?.toDouble() ?? 0;
+                                          return FlSpot(e.key.toDouble(), sales);
+                                        }).toList(),
+                                        isCurved: true,
+                                        color: Colors.indigo,
+                                        barWidth: 3,
+                                        dotData: FlDotData(show: true),
+                                        belowBarData: BarAreaData(
+                                          show: true,
+                                          color: Colors.indigo.withOpacity(0.1),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    // Category Breakdown Pie Chart
+                    if (_categoryBreakdown.isNotEmpty) ...[
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Penjualan per Kategori', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 200,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: PieChart(
+                                        PieChartData(
+                                          centerSpaceRadius: 30,
+                                          sectionsSpace: 2,
+                                          sections: _buildPieSections(),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: _buildPieLegend(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     // Low stock alert
                     if ((_data['low_stock']?['count'] ?? 0) > 0)
                       Card(
@@ -274,6 +399,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
     );
+  }
+
+  List<PieChartSectionData> _buildPieSections() {
+    final colors = [
+      Colors.indigo, Colors.teal, Colors.orange, Colors.pink,
+      Colors.cyan, Colors.amber, Colors.deepPurple, Colors.lime,
+    ];
+    final total = _categoryBreakdown.fold<double>(
+      0, (sum, c) => sum + ((c['revenue'] as num?)?.toDouble() ?? 0),
+    );
+    if (total == 0) return [];
+    return _categoryBreakdown.asMap().entries.map((e) {
+      final idx = e.key;
+      final c = e.value;
+      final revenue = (c['revenue'] as num?)?.toDouble() ?? 0;
+      final pct = (revenue / total) * 100;
+      final name = (c['product__category__name'] ?? '-').toString();
+      return PieChartSectionData(
+        value: revenue,
+        title: pct > 8 ? '${pct.toStringAsFixed(0)}%' : '',
+        color: colors[idx % colors.length],
+        radius: 60,
+        titleStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildPieLegend() {
+    final colors = [
+      Colors.indigo, Colors.teal, Colors.orange, Colors.pink,
+      Colors.cyan, Colors.amber, Colors.deepPurple, Colors.lime,
+    ];
+    return _categoryBreakdown.asMap().entries.map((e) {
+      final idx = e.key;
+      final c = e.value;
+      final name = (c['product__category__name'] ?? '-').toString();
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 12, height: 12, color: colors[idx % colors.length]),
+            const SizedBox(width: 6),
+            Text(name, style: const TextStyle(fontSize: 11)),
+          ],
+        ),
+      );
+    }).toList();
   }
 
   Color _statusColor(String status) {

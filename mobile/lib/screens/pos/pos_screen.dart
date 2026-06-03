@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../api/api_client.dart';
 import '../models/product.dart';
 import '../models/customer.dart';
@@ -58,6 +59,65 @@ class _POSScreenState extends State<POSScreen> {
       final customers = await _api.getCustomers();
       setState(() => _customers = customers);
     } catch (_) {}
+  }
+
+  Future<void> _scanBarcode() async {
+    try {
+      // Use mobile_scanner via a simple approach — launch search by barcode
+      final result = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const _BarcodeScannerPage(),
+        ),
+      );
+      if (result != null && result.isNotEmpty) {
+        // Find product by barcode
+        final products = await _api.getProducts(search: result);
+        final match = products.where((p) => p.barcode == result).toList();
+        if (match.isNotEmpty) {
+          _addToCart(match.first);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${match.first.name} ditambahkan')),
+            );
+          }
+        } else if (products.isNotEmpty) {
+          // Show search results
+          _showScanResults(products, result);
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Produk tidak ditemukan')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Scan gagal: $e')));
+      }
+    }
+  }
+
+  void _showScanResults(List<Product> products, String query) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('Hasil scan: "$query"', style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          ...products.take(5).map((p) => ListTile(
+            title: Text(p.name),
+            subtitle: Text('Rp ${p.sellPrice.toInt()}'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _addToCart(p);
+            },
+          )),
+        ],
+      ),
+    );
   }
 
   // ── Cart operations ──
@@ -393,13 +453,25 @@ class _POSScreenState extends State<POSScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(8),
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Cari produk...',
-                      prefixIcon: Icon(Icons.search),
-                      isDense: true,
-                    ),
-                    onChanged: (v) { _searchQuery = v; _loadProducts(); },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          decoration: const InputDecoration(
+                            hintText: 'Cari produk...',
+                            prefixIcon: Icon(Icons.search),
+                            isDense: true,
+                          ),
+                          onChanged: (v) { _searchQuery = v; _loadProducts(); },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        icon: const Icon(Icons.qr_code_scanner),
+                        onPressed: _scanBarcode,
+                        tooltip: 'Scan Barcode',
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(
@@ -531,4 +603,42 @@ class CartItem {
   });
 
   double get subtotal => (product.sellPrice * quantity) - discount;
+}
+
+// ─── Barcode Scanner Page ───
+
+class _BarcodeScannerPage extends StatefulWidget {
+  const _BarcodeScannerPage();
+
+  @override
+  State<_BarcodeScannerPage> createState() => _BarcodeScannerPageState();
+}
+
+class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
+  bool _scanned = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Scan Barcode'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.flash_on),
+            onPressed: () {}, // MobileScanner handles torch internally
+          ),
+        ],
+      ),
+      body: MobileScanner(
+        onDetect: (capture) {
+          if (_scanned) return;
+          final List<Barcode> barcodes = capture.barcodes;
+          if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
+            _scanned = true;
+            Navigator.pop(context, barcodes.first.rawValue);
+          }
+        },
+      ),
+    );
+  }
 }

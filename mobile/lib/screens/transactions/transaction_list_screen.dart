@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../api/api_client.dart';
@@ -16,6 +17,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   bool _loading = true;
   String _statusFilter = 'all';
   final _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -25,6 +27,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -34,6 +37,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     try {
       final txs = await _api.getTransactions(
         status: _statusFilter == 'all' ? null : _statusFilter,
+        search: _searchController.text.isEmpty ? null : _searchController.text,
       );
       setState(() { _transactions = txs; _loading = false; });
     } catch (e) {
@@ -163,13 +167,28 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 Expanded(
                   child: TextField(
                     controller: _searchController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Cari invoice...',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
                       isDense: true,
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                _load();
+                              },
+                            )
+                          : null,
                     ),
-                    onSubmitted: (_) => _load(),
+                    onChanged: (_) {
+                      setState(() {}); // rebuild for clear button
+                      _debounce?.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 400), () {
+                        _load();
+                      });
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
