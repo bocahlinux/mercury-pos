@@ -172,7 +172,7 @@ mercury-pos/
 | **Phase 2** | Cart & Checkout | ✅ Selesai | Full cart logic, receipt preview, mixed payment, zustand store |
 | **Phase 3** | Invoice & History | ✅ Selesai | PDF generation, mark paid/cancel, refund + stock restore, hold/resume |
 | **Phase 4** | Dashboard & Reports | ✅ Selesai | Charts, comparison%, low stock, payment breakdown, Excel export, customer report |
-| **Phase 5** | Multi-User & Audit | 📋 Planned | Role-based access, audit log |
+| **Phase 5** | Multi-User & Audit | ✅ Selesai | Role-based permissions, AuditLog model + API, User management (web + flutter), Audit log viewer |
 | **Phase 6** | Flutter Parity | ✅ Selesai | Charts, product CRUD, dark mode, barcode scanner, settings, transaction search |
 | **Phase 7** | Polish & Release | 📋 Planned | Testing, docs, open-source release |
 
@@ -233,6 +233,22 @@ mercury-pos/
 | Customer report | ✅ | ✅ | ✅ |
 | Excel export (sales/product/customer) | ✅ | ❌ | ✅ |
 | Flutter Reports screen (3 tabs) | — | ✅ | — |
+
+### Phase 5 Detail (✅ Selesai)
+
+| Task | Web | Flutter | Backend |
+|---|---|---|---|
+| AuditLog model | — | — | ✅ |
+| Audit helper functions | — | — | ✅ |
+| UserManagementViewSet (Owner) | — | — | ✅ |
+| AuditLogView (Admin/Owner) | — | — | ✅ |
+| IsKasir permission | — | — | ✅ |
+| Role-based permissions (all views) | — | — | ✅ |
+| UsersPage (CRUD, role change) | ✅ | — | — |
+| AuditLogPage (filterable) | ✅ | — | — |
+| UsersScreen (CRUD, role change) | — | ✅ | — |
+| AuditLogScreen (filterable) | — | ✅ | — |
+| Settings nav to Users/Audit | — | ✅ | — |
 
 ### Phase 6 Detail (✅ Selesai)
 
@@ -311,6 +327,21 @@ flutter run
 | POST | `/auth/change-password/` | Ganti password |
 | GET | `/auth/users/` | List semua user |
 
+### User Management (Owner only)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/auth/users/manage/` | List semua user |
+| GET | `/auth/users/manage/{id}/` | Detail user |
+| PATCH | `/auth/users/manage/{id}/update_role/` | Ganti role user |
+| POST | `/auth/users/manage/{id}/activate/` | Aktifkan user |
+| POST | `/auth/users/manage/{id}/deactivate/` | Nonaktifkan user |
+| DELETE | `/auth/users/manage/{id}/` | Hapus user |
+
+### Audit Log (Admin/Owner)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/auth/audit-log/` | List audit log (filter: ?action=&model_name=&user_email=) |
+
 ### Products
 | Method | Endpoint | Description |
 |---|---|---|
@@ -384,7 +415,7 @@ flutter run
 - [x] Invoice (PDF, mark paid/cancel)
 - [x] Dashboard & Reports (charts, comparison%, low stock, Excel export)
 - [x] Flutter Parity (charts, product CRUD, dark mode, barcode scanner, settings)
-- [ ] Multi-user & audit log (Phase 5)
+- [x] Multi-user & audit log (Phase 5)
 
 ### v1.1 (Next)
 - [ ] Receipt printing (thermal printer)
