@@ -190,10 +190,10 @@ mercury-pos/
 | Transactions (list) | ✅ | ✅ | ✅ |
 | Invoices (list, PDF) | ✅ | ✅ | ✅ |
 | Customers (CRUD) | ✅ | ✅ | ✅ |
-| Reports (dashboard) | ✅ | ❌ Missing | ✅ |
+| Reports (dashboard) | ✅ | ✅ | ✅ |
 | Settings | ✅ | ✅ | ✅ |
-| Error handling | ✅ | ⚠️ | — |
-| Loading states | ✅ | ⚠️ | — |
+| Error handling | ✅ | ✅ | — |
+| Loading states | ✅ | ✅ | — |
 | CORS config | — | — | ✅ |
 | Seed data | — | — | ✅ |
 

@@ -48,10 +48,12 @@ Aplikasi POS gratis, open-source, self-hosted dengan fitur lengkap:
 | Database | SQLite (dev) → PostgreSQL (prod) |
 | API Style | RESTful dengan trailing slashes |
 | CORS | django-cors-headers |
+| API Docs | drf-spectacular (Swagger + ReDoc) |
 | PDF | reportlab |
 | Excel Export | openpyxl |
 | Barcode | python-barcode |
 | Pillow | ImageField handling |
+| Production Server | gunicorn + whitenoise |
 
 ### 2.2 Web Frontend
 | Komponen | Teknologi |
@@ -158,21 +160,30 @@ Aplikasi POS gratis, open-source, self-hosted dengan fitur lengkap:
 | Link to Transaction | `customer` FK on Transaction | ✅ |
 | Web Customer Page | `/customers` | ✅ |
 
-### 4.6 Dashboard & Reports (✅ Phase 0-1)
+### 4.6 Dashboard & Reports (✅ Phase 4)
 
 | Feature | Model/Endpoint | Status |
 |---|---|---|
 | **Dashboard Stats** | `/api/reports/dashboard/` | ✅ |
 | Today's sales & transactions | Calculated from completed TXs | ✅ |
-| Week/month sales | Rolling aggregation | ✅ |
+| Week/month sales with comparison % | Rolling aggregation | ✅ |
 | Top 5 products by revenue | Monthly | ✅ |
 | Recent 10 transactions | Ordered by created_at | ✅ |
+| Recent 5 invoices | Ordered by created_at | ✅ |
+| Low stock alerts | Product stock ≤ min_stock_alert | ✅ |
+| Payment method breakdown | Pie chart data | ✅ |
+| Category sales breakdown | Pie chart data | ✅ |
+| Sales trend 7 days | Line chart data | ✅ |
 | **Sales Report** | `/api/reports/sales-report/` | ✅ |
 | Filter by period | daily/weekly/monthly/yearly | ✅ |
 | Filter by date range | `date_from`, `date_to` | ✅ |
 | Summary + grouped data | totals, counts, averages | ✅ |
 | **Product Report** | `/api/reports/product-report/` | ✅ |
 | Products sold, revenue, avg price | Per product aggregation | ✅ |
+| **Customer Report** | `/api/reports/customer-report/` | ✅ |
+| Customer spending, order count | Per customer aggregation | ✅ |
+| **Excel Export** | `*/export/` endpoints | ✅ |
+| Sales/Product/Customer export | openpyxl | ✅ |
 
 ### 4.7 Store Settings (✅ Phase 0-1)
 
@@ -200,17 +211,22 @@ Aplikasi POS gratis, open-source, self-hosted dengan fitur lengkap:
 | Customers | `/customers` | ✅ |
 | Reports | `/reports` | ✅ |
 | Settings | `/settings` | ✅ |
+| Users | `/users` | ✅ |
+| Audit Log | `/audit-log` | ✅ |
 
 ### 4.9 Mobile Screens (Flutter)
 
-| Screen | Navigation Tab | Status |
+| Screen | Navigation | Status |
 |---|---|---|
 | Login | — | ✅ |
-| Dashboard | Tab 0 | ⚠️ Static data |
+| Dashboard | Tab 0 | ✅ Connected to API |
 | POS | Tab 1 | ✅ Connected to API |
-| Products | Tab 2 | ⚠️ Need verify |
-| Invoice/History | Tab 3 | ⚠️ Need verify |
-| Settings | Tab 4 | ⚠️ Need verify |
+| Products | Tab 2 | ✅ Full CRUD |
+| Invoice/History | Tab 3 | ✅ Connected to API |
+| Settings | Tab 4 | ✅ Connected to API |
+| Users | Settings nav | ✅ Full CRUD |
+| Audit Log | Settings nav | ✅ Filterable |
+| Reports | Tab/Drawer | ✅ 3 tabs (sales, product, customer) |
 
 ---
 
@@ -229,6 +245,21 @@ Aplikasi POS gratis, open-source, self-hosted dengan fitur lengkap:
 | GET | `/auth/profile/` | Get current user profile |
 | POST | `/auth/change-password/` | Change password |
 | GET | `/auth/users/` | List all users |
+
+### User Management (Owner only)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/auth/users/manage/` | List all users |
+| GET | `/auth/users/manage/{id}/` | User detail |
+| PATCH | `/auth/users/manage/{id}/update_role/` | Change user role |
+| POST | `/auth/users/manage/{id}/activate/` | Activate user |
+| POST | `/auth/users/manage/{id}/deactivate/` | Deactivate user |
+| DELETE | `/auth/users/manage/{id}/` | Delete user |
+
+### Audit Log (Admin/Owner)
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/auth/audit-log/` | List audit logs (filter: ?action=&model_name=&user_email=) |
 
 ### Products
 | Method | Endpoint | Description |
@@ -268,6 +299,10 @@ Aplikasi POS gratis, open-source, self-hosted dengan fitur lengkap:
 | GET | `/reports/dashboard/` | Dashboard statistics |
 | GET | `/reports/sales-report/?period=daily&date_from=...&date_to=...` | Sales report |
 | GET | `/reports/product-report/?date_from=...&date_to=...` | Product performance |
+| GET | `/reports/customer-report/?date_from=...&date_to=...` | Customer report |
+| GET | `/reports/sales-report/export/` | Export sales report to Excel |
+| GET | `/reports/product-report/export/` | Export product report to Excel |
+| GET | `/reports/customer-report/export/` | Export customer report to Excel |
 
 ### Settings
 | Method | Endpoint | Description |
@@ -340,23 +375,25 @@ core.StoreSettings (singleton)
 | Phase | Name | Scope | Status |
 |---|---|---|---|
 | **Phase 0** | Project Setup | Monorepo, Django apps, React pages, Flutter screens, Git | ✅ Done |
-| **Phase 1** | API Integration | Connect all frontend to backend, error handling, loading states | 🔄 In Progress |
-| **Phase 2** | Cart & Checkout | Full cart logic, checkout flow, receipt printing | 📋 Planned |
-| **Phase 3** | Invoice & History | PDF generation, invoice history, transaction history | 📋 Planned |
-| **Phase 4** | Dashboard & Reports | Charts, reports with real data, Excel export | 🔄 Partial |
-| **Phase 5** | Multi-User & Audit | Role-based access, audit log, activity tracking | 📋 Planned |
-| **Phase 6** | Flutter Parity | Full feature parity with web, offline support | 📋 Planned |
-| **Phase 7** | Polish & Release | Testing, docs, open-source release, deployment guide | 📋 Planned |
+| **Phase 1** | API Integration | Connect all frontend to backend, error handling, loading states | ✅ Done |
+| **Phase 2** | Cart & Checkout | Full cart logic, checkout flow, receipt preview, mixed payment | ✅ Done |
+| **Phase 3** | Invoice & History | PDF generation, invoice history, transaction history, hold/resume, refund | ✅ Done |
+| **Phase 4** | Dashboard & Reports | Charts, reports with real data, Excel export, customer report | ✅ Done |
+| **Phase 5** | Multi-User & Audit | Role-based access, audit log, user management, activity tracking | ✅ Done |
+| **Phase 6** | Flutter Parity | Charts, product CRUD, dark mode, barcode scanner, settings, search | ✅ Done |
+| **Phase 7** | Polish & Release | Testing (118+ tests), docs, security, Docker, open-source release | ✅ Done |
 
 ---
 
 ## 8. Open Source Strategy
 
-- **License**: MIT
-- **Repo**: https://github.com/bocahlinux/mercury-pos
-- **Contribution**: Open to PRs, dengan contributing guidelines
-- **Documentation**: README.md, API docs, deployment guide
+- **License**: MIT ✅
+- **Repo**: https://github.com/bocahlinux/mercury-pos ✅
+- **Contribution**: Open to PRs, with contributing guidelines ✅
+- **Documentation**: README.md, API docs (Swagger/ReDoc), deployment guide, contributing guide ✅
+- **CI/CD**: GitHub Actions — backend + web tests ✅
 - **Roadmap**: Public GitHub Issues/Projects
+- **Version**: v1.0.0 released June 2026 ✅
 
 ---
 
@@ -364,18 +401,22 @@ core.StoreSettings (singleton)
 
 | Feature | Description |
 |---|---|
-| **Barcode Scanner** | Scan barcode via kamera mobile untuk POS |
-| **Multi-Store** | Support banyak cabang toko |
-| **Supplier Management** | Kelola supplier dan purchase order |
-| **Loyalty Program** | Point system untuk pelanggan tetap |
-| **WhatsAppnotification** | Kirim invoice/receipt via WhatsApp |
-| **Offline Sync** | Flutter app bekerja offline, sync saat online |
-| **Dark Mode** | Tema gelap untuk web dan mobile |
-| **Multi-Bahasa** | i18n support (ID, EN) |
-| **Inventory Alert** | Notifikasi stok rendah via email/push |
-| **End-of-Day Report** | Laporan tutup kasir harian |
-| **Diskon & Promo** | Kode promo, diskon otomatis |
+| **Receipt Printing** | Thermal printer support for receipts |
+| **WhatsApp Notification** | Send invoice/receipt via WhatsApp |
+| **Offline Sync** | Flutter app works offline, syncs when online |
+| **Multi-Store** | Support multiple store branches |
+| **Supplier Management** | Manage suppliers and purchase orders |
+| **Loyalty Program** | Point system for repeat customers |
+| **Biometric Login** | Fingerprint/face unlock for Flutter app |
+| **Multi-Language** | i18n support (ID, EN) |
+| **Inventory Alert** | Low stock notifications via email/push |
+| **End-of-Day Report** | Daily cashier closing report |
+| **Discount & Promo** | Promo codes, automatic discounts |
+| **API Rate Limiting** | ✅ Done in v1.0 |
+| **Docker Deployment** | ✅ Done in v1.0 |
+| **Dark Mode** | ✅ Done in v1.0 (Flutter) |
+| **Barcode Scanner** | ✅ Done in v1.0 (Flutter) |
 
 ---
 
-*Last updated: June 1, 2026 — OWL*
+*Last updated: June 5, 2026 — OWL*
