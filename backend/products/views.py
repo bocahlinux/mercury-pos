@@ -9,10 +9,14 @@ from .serializers import (
     StockMovementSerializer,
 )
 from .filters import ProductFilter
+from accounts.permissions import IsAdmin, IsKasir
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = [IsAdmin]
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -20,6 +24,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     filterset_class = ProductFilter
     search_fields = ['name', 'sku', 'description']
     ordering_fields = ['name', 'sell_price', 'stock']
+    permission_classes = [IsAdmin]
 
     def get_serializer_class(self):
         if self.action in ['list']:
@@ -28,7 +33,9 @@ class ProductViewSet(viewsets.ModelViewSet):
             return ProductDetailSerializer
         return ProductCreateUpdateSerializer
 
+
 class StockMovementViewSet(viewsets.ModelViewSet):
     queryset = StockMovement.objects.all()
     serializer_class = StockMovementSerializer
     http_method_names = ['get', 'post', 'head', 'options']
+    permission_classes = [IsAdmin]

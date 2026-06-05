@@ -10,12 +10,14 @@ from .serializers import (
 )
 from .utils import generate_invoice_number
 from .filters import TransactionFilter
+from accounts.permissions import IsAdmin, IsKasir
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all().select_related('customer', 'cashier').prefetch_related('items')
     filter_backends = [DjangoFilterBackend]
     filterset_class = TransactionFilter
+    permission_classes = [IsKasir]
 
     def get_serializer_class(self):
         if self.action == 'list':

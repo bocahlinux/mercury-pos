@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenSerializer
-from rest_framework_simplejwt.settings import api_settings as jwt_settings
-from .models import User
+from .models import AuditLog, User
 
 
 class CustomTokenObtainPairSerializer(BaseTokenSerializer):
@@ -58,3 +57,17 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError('Password lama salah')
         return value
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    user_role = serializers.CharField(source='user.role', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id', 'user_email', 'user_role', 'action',
+            'model_name', 'object_id', 'object_repr',
+            'detail', 'ip_address', 'created_at',
+        ]
+        read_only_fields = fields

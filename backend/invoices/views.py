@@ -7,6 +7,7 @@ from .models import Invoice
 from .serializers import InvoiceSerializer, InvoiceCreateSerializer
 from .utils import generate_pdf_invoice
 from .filters import InvoiceFilter
+from accounts.permissions import IsAdmin, IsKasir
 
 
 class InvoiceViewSet(viewsets.ModelViewSet):
@@ -14,6 +15,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     serializer_class = InvoiceSerializer
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filterset_class = InvoiceFilter
+    permission_classes = [IsKasir]
 
     def get_serializer_class(self):
         if self.action == 'create':

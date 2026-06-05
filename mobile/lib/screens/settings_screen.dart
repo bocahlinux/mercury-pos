@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../api/api_client.dart';
 import '../main.dart';
+import '../screens/users/users_screen.dart';
+import '../screens/audit/audit_log_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -136,6 +138,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onChanged: (_) => themeService.toggle(),
                   ),
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Phase 5: User Management & Audit Log (Admin/Owner only)
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.admin_panel_settings),
+                    title: const Text('User Management'),
+                    subtitle: const Text('Kelola user dan role'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UsersScreen())),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.history),
+                    title: const Text('Audit Log'),
+                    subtitle: const Text('Riwayat aktivitas sistem'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AuditLogScreen())),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),

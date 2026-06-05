@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, ShoppingCart, Package, CreditCard, FileText, Users, BarChart2, Settings, LogOut } from 'lucide-react';
+import { Home, ShoppingCart, Package, CreditCard, FileText, Users, BarChart2, Settings, LogOut, ScrollText, Shield } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 const menuItems = [
@@ -11,6 +11,8 @@ const menuItems = [
   { to: '/invoices', label: 'Invoices', icon: FileText },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/reports', label: 'Reports', icon: BarChart2 },
+  { to: '/users', label: 'Users', icon: Shield },
+  { to: '/audit-log', label: 'Audit Log', icon: ScrollText },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

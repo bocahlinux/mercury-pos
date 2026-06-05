@@ -11,6 +11,8 @@ import TransactionsPage from '@/pages/transactions/TransactionsPage';
 import InvoicesPage from '@/pages/invoices/InvoicesPage';
 import CustomersPage from '@/pages/customers/CustomersPage';
 import ReportsPage from '@/pages/reports/ReportsPage';
+import UsersPage from '@/pages/users/UsersPage';
+import AuditLogPage from '@/pages/audit/AuditLogPage';
 import SettingsPage from '@/pages/settings/SettingsPage';
 import { ToastContainer } from '@/components/ui/Toast';
 
@@ -41,6 +43,8 @@ const App: React.FC = () => {
         <Route path="invoices" element={<InvoicesPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="audit-log" element={<AuditLogPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>

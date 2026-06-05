@@ -11,6 +11,7 @@ from transactions.models import Transaction, TransactionItem
 from products.models import Product, Category
 from customers.models import Customer
 from invoices.models import Invoice
+from accounts.permissions import IsAdmin, IsKasir
 
 try:
     import openpyxl
@@ -20,7 +21,7 @@ except ImportError:
 
 
 class DashboardView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsKasir]
 
     def get(self, request):
         today = timezone.now().date()
@@ -174,7 +175,7 @@ class DashboardView(APIView):
 
 
 class SalesReportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsKasir]
 
     def get(self, request):
         period = request.query_params.get('period', 'daily')
@@ -228,7 +229,7 @@ class SalesReportView(APIView):
 
 
 class ProductReportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsKasir]
 
     def get(self, request):
         date_from = request.query_params.get('date_from')
@@ -262,7 +263,7 @@ class ProductReportView(APIView):
 
 
 class CustomerReportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def get(self, request):
         date_from = request.query_params.get('date_from')
@@ -312,7 +313,7 @@ def _build_excel(title: str, headers: list, rows: list):
 
 
 class SalesReportExportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def get(self, request):
         if not HAS_OPENPYXL:
@@ -339,7 +340,7 @@ class SalesReportExportView(APIView):
 
 
 class ProductReportExportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def get(self, request):
         if not HAS_OPENPYXL:
@@ -365,7 +366,7 @@ class ProductReportExportView(APIView):
 
 
 class CustomerReportExportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def get(self, request):
         if not HAS_OPENPYXL:
