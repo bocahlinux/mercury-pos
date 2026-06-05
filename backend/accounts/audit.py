@@ -24,7 +24,7 @@ def _log_action(user, action, instance, detail='', request=None):
     from .models import AuditLog
 
     if user is None or (hasattr(user, 'is_authenticated') and not user.is_authenticated):
-        user = None
+        return  # Don't log anonymous/unauthenticated actions
 
     ip = _get_client_ip(request) if request else None
 
