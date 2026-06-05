@@ -8,11 +8,14 @@
 
 <p align="center">
   <a href="https://github.com/bocahlinux/mercury-pos"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://github.com/bocahlinux/mercury-pos/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/bocahlinux/mercury-pos/ci.yml?branch=main&label=CI" alt="CI"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white" alt="Python 3.11"></a>
   <a href="https://www.djangoproject.com/"><img src="https://img.shields.io/badge/Django-4.2-092E20?logo=django&logoColor=white" alt="Django 4.2"></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React 18"></a>
   <a href="https://flutter.dev/"><img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white" alt="Flutter"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <img src="https://img.shields.io/badge/tests-118%2B%20passing-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
 </p>
 
 > ⚡ Nama **"Mercury"** diambil dari planet tercepat di tata surya — cepat, ringan, dan reliable.
@@ -174,7 +177,7 @@ mercury-pos/
 | **Phase 4** | Dashboard & Reports | ✅ Selesai | Charts, comparison%, low stock, payment breakdown, Excel export, customer report |
 | **Phase 5** | Multi-User & Audit | ✅ Selesai | Role-based permissions, AuditLog model + API, User management (web + flutter), Audit log viewer |
 | **Phase 6** | Flutter Parity | ✅ Selesai | Charts, product CRUD, dark mode, barcode scanner, settings, transaction search |
-| **Phase 7** | Polish & Release | 📋 Planned | Testing, docs, open-source release |
+|| **Phase 7** | Polish & Release | ✅ Selesai | Testing (118+ tests), docs, security, open-source release |
 
 ### Phase 1 Detail (✅ Selesai)
 
@@ -269,9 +272,10 @@ mercury-pos/
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 18+
-- Flutter 3.x
+- **Python 3.11+** — Backend
+- **Node.js 18+** — Web frontend
+- **Flutter 3.x** — Mobile app (optional)
+- **PostgreSQL** — Production database (SQLite for dev)
 
 ### Backend
 
@@ -282,12 +286,14 @@ source venv/bin/activate      # Linux/Mac
 # venv\Scripts\activate       # Windows
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env → set SECRET_KEY and other values
+# Edit .env → set SECRET_KEY, DATABASE_URL, CORS_ALLOWED_ORIGINS, etc.
 python manage.py migrate
+python manage.py createsuperuser    # optional: create admin user
 python manage.py runserver
 ```
 
 Backend jalan di `http://localhost:8000`
+API docs: `http://localhost:8000/api/docs/`
 
 ### Web Frontend
 
@@ -301,12 +307,23 @@ npm run dev
 
 Web jalan di `http://localhost:5173`
 
+Run tests:
+```bash
+npm test                # single run
+npm run test:watch     # watch mode
+```
+
 ### Mobile App
 
 ```bash
 cd mobile
 flutter pub get
 flutter run
+```
+
+Run tests:
+```bash
+flutter test
 ```
 
 ---
@@ -316,6 +333,13 @@ flutter run
 ### Base URL
 - Development: `http://localhost:8000/api`
 - Production: `https://your-domain.com/api`
+
+### API Documentation
+| URL | Description |
+|---|---|
+| `/api/docs/` | Swagger UI — interactive API docs |
+| `/api/redoc/` | ReDoc — clean API reference |
+| `/api/schema/` | OpenAPI 3.0 schema (YAML) |
 
 ### Authentication
 | Method | Endpoint | Description |
@@ -405,7 +429,7 @@ flutter run
 
 ## 🗺 Roadmap
 
-### v1.0 (Current)
+### v1.0 (Released)
 - [x] Backend API (Django REST)
 - [x] Web App (React) — 10 pages
 - [x] Mobile App (Flutter) — 8 screens + barcode scanner
@@ -416,6 +440,10 @@ flutter run
 - [x] Dashboard & Reports (charts, comparison%, low stock, Excel export)
 - [x] Flutter Parity (charts, product CRUD, dark mode, barcode scanner, settings)
 - [x] Multi-user & audit log (Phase 5)
+- [x] Tests (118+ passing)
+- [x] Documentation (API docs, setup, deployment, contributing)
+- [x] Security hardening (rate limiting, security headers, CORS)
+- [x] License: MIT
 
 ### v1.1 (Next)
 - [ ] Receipt printing (thermal printer)
